@@ -16,7 +16,7 @@
 | 디자인 시스템 | shadcn/ui 기반 커스텀 + Storybook |
 | 디자인 무드 | 다크 모던 (Spotify 스타일 다크 배경 + 네온/그라데이션 포인트) |
 | 상태관리 | Zustand (전역) + TanStack Query (서버 상태) |
-| AI | OpenAI API (GPT-4o-mini) - 자연어 → 음악 특성 매핑 |
+| AI | Google Gemini API (gemini-2.0-flash, 무료 tier) - 자연어 → 음악 특성 매핑 |
 | 음악 | Spotify Web API (OAuth 2.0 PKCE) |
 | 패키지 매니저 | pnpm |
 | 배포 | Vercel |
@@ -37,7 +37,7 @@ feelist/
 │   │   │   │   └── spotify/
 │   │   │   │       └── route.ts    # Spotify OAuth 콜백 처리
 │   │   │   ├── analyze/
-│   │   │   │   └── route.ts        # OpenAI 자연어 분석 API
+│   │   │   │   └── route.ts        # Gemini 자연어 분석 API
 │   │   │   └── playlist/
 │   │   │       └── route.ts        # Spotify 플레이리스트 생성 API
 │   │   ├── callback/
@@ -64,7 +64,7 @@ feelist/
 │   │   ├── ShareButton.tsx         # 공유 버튼
 │   │   └── Header.tsx              # 헤더 (로고 + 로그인 상태)
 │   ├── lib/
-│   │   ├── openai.ts               # OpenAI API 클라이언트
+│   │   ├── gemini.ts               # Google Gemini API 클라이언트
 │   │   ├── spotify.ts              # Spotify API 유틸리티
 │   │   ├── prompts.ts              # AI 프롬프트 템플릿
 │   │   └── utils.ts                # shadcn/ui cn() 유틸리티
@@ -134,7 +134,7 @@ feelist/
 - [x] `pnpm create next-app` (App Router, TypeScript, Tailwind, ESLint)
 - [x] shadcn/ui 초기화 + 컴포넌트 추가
 - [x] Storybook 설치
-- [x] 추가 의존성: `zustand`, `@tanstack/react-query`, `openai`, `sonner`
+- [x] 추가 의존성: `zustand`, `@tanstack/react-query`, `@google/generative-ai`, `sonner`
 - [x] `.env.example` 생성
 
 ### 2단계: 디자인 시스템 구축 ✅
@@ -150,7 +150,7 @@ feelist/
 
 ### 4단계: 타입 정의 & 공통 모듈
 - [ ] `src/types/index.ts`: MoodAnalysis, SpotifyTrack, Playlist 등 타입
-- [ ] `src/lib/openai.ts`: OpenAI 클라이언트 초기화
+- [ ] `src/lib/gemini.ts`: Google Gemini 클라이언트 초기화
 - [ ] `src/lib/spotify.ts`: Spotify API 헬퍼 함수들
 - [ ] `src/lib/prompts.ts`: 자연어 → 음악 특성 변환 프롬프트
 
@@ -161,7 +161,7 @@ feelist/
 - [ ] `src/components/SpotifyLoginButton.tsx`: PKCE 플로우
 
 ### 6단계: AI 분석 API
-- [ ] `src/app/api/analyze/route.ts`: 자연어 → OpenAI → 음악 특성 JSON
+- [ ] `src/app/api/analyze/route.ts`: 자연어 → Gemini → 음악 특성 JSON
 - [ ] Spotify recommendation seed 형태로 변환
 
 ### 7단계: 플레이리스트 생성 API
@@ -199,7 +199,7 @@ feelist/
 
 ## 핵심 AI 프롬프트 설계
 
-OpenAI에게 보낼 시스템 프롬프트 → 구조화된 JSON 응답:
+Gemini에게 보낼 시스템 프롬프트 → 구조화된 JSON 응답:
 
 ```json
 {
@@ -227,7 +227,7 @@ SPOTIFY_CLIENT_ID=
 SPOTIFY_CLIENT_SECRET=
 NEXT_PUBLIC_SPOTIFY_CLIENT_ID=
 NEXT_PUBLIC_REDIRECT_URI=http://localhost:3000/callback
-OPENAI_API_KEY=
+GEMINI_API_KEY=
 ```
 
 ---
