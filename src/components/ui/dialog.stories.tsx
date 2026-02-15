@@ -12,6 +12,7 @@ import {
   DialogClose,
 } from "./dialog";
 import { Button } from "./button";
+import { expect, userEvent, within, spyOn } from "storybook/test";
 
 const meta: Meta<typeof DialogContent> = {
   title: "UI/Dialog",
@@ -51,6 +52,30 @@ export const Default: Story = {
       </DialogContent>
     </Dialog>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const body = within(document.body);
+
+    // 1. 렌더링 확인 — 트리거 버튼이 보이는지
+    const triggerBtn = canvas.getByRole("button", { name: "다이얼로그 열기" });
+    await expect(triggerBtn).toBeVisible();
+
+    // 2. 인터랙션 — 클릭해서 다이얼로그 열기
+    await userEvent.click(triggerBtn);
+
+    // 3. 결과 assertion — 다이얼로그 & 내용 확인
+    const dialog = body.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(body.getByText("플레이리스트 저장")).toBeVisible();
+    await expect(body.getByText("저장하기")).toBeVisible();
+
+    // 4. 인터랙션 — X 버튼으로 닫기
+    const closeBtn = body.getByRole("button", { name: /close/i });
+    await userEvent.click(closeBtn);
+
+    // 5. 결과 assertion — 다이얼로그가 사라졌는지
+    await expect(body.queryByRole("dialog")).not.toBeInTheDocument();
+  },
 };
 
 // --- Without Close Button ---
@@ -76,6 +101,28 @@ export const WithoutCloseButton: Story = {
       </DialogContent>
     </Dialog>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const body = within(document.body);
+
+    // 1. 렌더링 확인 — 트리거 버튼
+    const triggerBtn = canvas.getByRole("button", { name: "닫기 버튼 없음" });
+    await expect(triggerBtn).toBeVisible();
+
+    // 2. 인터랙션 — 다이얼로그 열기
+    await userEvent.click(triggerBtn);
+
+    // 3. 결과 assertion — X 버튼 없고, 취소 버튼만 존재
+    await expect(body.getByRole("dialog")).toBeVisible();
+    await expect(body.queryByRole("button", { name: /close/i })).not.toBeInTheDocument();
+    await expect(body.getByRole("button", { name: "취소" })).toBeVisible();
+
+    // 4. 인터랙션 — 취소 버튼으로 닫기
+    await userEvent.click(body.getByRole("button", { name: "취소" }));
+
+    // 5. 결과 assertion — 닫혔는지 확인
+    await expect(body.queryByRole("dialog")).not.toBeInTheDocument();
+  },
 };
 
 // --- WithForm ---
@@ -143,6 +190,32 @@ function WithFormStory() {
 
 export const WithForm: Story = {
   render: () => <WithFormStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const body = within(document.body);
+
+    // 1. 렌더링 확인 — 트리거 버튼
+    await expect(canvas.getByRole("button", { name: "폼 다이얼로그 열기" })).toBeVisible();
+
+    // 2. 인터랙션 — 다이얼로그 열기
+    await userEvent.click(canvas.getByRole("button", { name: "폼 다이얼로그 열기" }));
+    await expect(body.getByRole("dialog")).toBeVisible();
+
+    // 3. 결과 assertion — 저장 버튼이 비활성화 상태인지 (이름 미입력)
+    const saveBtn = body.getByRole("button", { name: /Spotify에 저장/ });
+    await expect(saveBtn).toBeDisabled();
+
+    // 4. 인터랙션 — 플레이리스트 이름 입력
+    const nameInput = body.getByPlaceholderText("나만의 플레이리스트");
+    await userEvent.type(nameInput, "비 오는 날 드라이브");
+
+    // 5. 결과 assertion — 저장 버튼이 활성화됐는지
+    await expect(saveBtn).toBeEnabled();
+
+    // 6. 인터랙션 — 이름 지우면 다시 비활성화
+    await userEvent.clear(nameInput);
+    await expect(saveBtn).toBeDisabled();
+  },
 };
 
 // --- SharePlaylist ---
@@ -200,4 +273,32 @@ function SharePlaylistStory() {
 
 export const SharePlaylist: Story = {
   render: () => <SharePlaylistStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const body = within(document.body);
+
+    // clipboard mock (브라우저 권한 없이도 테스트 가능하게)
+    spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+
+    // 1. 렌더링 확인 — 공유 트리거 버튼
+    await expect(canvas.getByRole("button", { name: /플레이리스트 공유/ })).toBeVisible();
+
+    // 2. 인터랙션 — 다이얼로그 열기
+    await userEvent.click(canvas.getByRole("button", { name: /플레이리스트 공유/ }));
+    await expect(body.getByRole("dialog")).toBeVisible();
+
+    // 3. 결과 assertion — URL과 "링크 복사" 버튼 확인
+    await expect(body.getByText("https://feelist.app/playlist/abc123xyz")).toBeVisible();
+    const copyBtn = body.getByRole("button", { name: "링크 복사" });
+    await expect(copyBtn).toBeVisible();
+
+    // 4. 인터랙션 — 링크 복사 클릭
+    await userEvent.click(copyBtn);
+
+    // 5. 결과 assertion — clipboard 호출됐는지 + 버튼 텍스트가 "복사됨!"으로 바뀌었는지
+    await expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      "https://feelist.app/playlist/abc123xyz"
+    );
+    await expect(body.getByRole("button", { name: "복사됨!" })).toBeVisible();
+  },
 };
