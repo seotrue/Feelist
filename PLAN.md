@@ -144,9 +144,9 @@ feelist/
 - [x] `pnpm build` 성공 확인
 
 ### 3단계: 디자인 시스템 스토리 작성
-- [ ] 각 ui 컴포넌트별 `.stories.tsx` 작성
-- [ ] Variants, sizes, states 문서화
-- [ ] 다크 배경에서의 렌더링 확인
+- [x] 각 ui 컴포넌트별 `.stories.tsx` 작성
+- [x] Variants, sizes, states 문서화
+- [x] 다크 배경에서의 렌더링 확인
 
 ### 4단계: 타입 정의 & 공통 모듈
 - [ ] `src/types/index.ts`: MoodAnalysis, SpotifyTrack, Playlist 등 타입

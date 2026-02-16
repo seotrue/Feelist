@@ -47,3 +47,6 @@ storybook-static
 .idea
 .cursor
 .junie
+
+# local architecture notes (Claude 설계 의도 문서)
+ARCHITECTURE.md

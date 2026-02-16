@@ -13,6 +13,26 @@ const SPOTIFY_ACCOUNTS_BASE = "https://accounts.spotify.com";
 // OAuth PKCE Flow Helpers
 // ============================================================================
 
+
+/**
+ * Spotify API 호출 래퍼 (에러 처리 통합)
+ */
+async function spotifyApiRequest<T>(
+ url:string,
+ options:RequestInit ={
+ }
+): Promise<T> {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const endpoint = url.replace(SPOTIFY_API_BASE, "");
+        throw new Error(`Spotify API Error (${options.method || 'GET'} ${endpoint}): ${response.status} ${response.statusText}. ${JSON.stringify(errorData)}`)
+    }
+
+    return response.json();
+}
+
+
 /**
  * PKCE Code Verifier 생성 (43-128자의 랜덤 문자열)
  */
@@ -130,17 +150,14 @@ export async function refreshAccessToken(
 export async function getCurrentUser(
   accessToken: string
 ): Promise<SpotifyUser> {
-  const response = await fetch(`${SPOTIFY_API_BASE}/me`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch user profile");
-  }
-
-  return response.json();
+  return spotifyApiRequest<SpotifyUser>(
+    `${SPOTIFY_API_BASE}/me`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
 }
 
 /**
@@ -159,7 +176,7 @@ export async function getRecommendations(
     limit: "20",
   });
 
-  const response = await fetch(
+  const data = await spotifyApiRequest<{tracks:SpotifyTrack[]}>(
     `${SPOTIFY_API_BASE}/recommendations?${params.toString()}`,
     {
       headers: {
@@ -167,12 +184,6 @@ export async function getRecommendations(
       },
     }
   );
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch recommendations");
-  }
-
-  const data = await response.json();
   return data.tracks;
 }
 
@@ -187,8 +198,7 @@ export async function createPlaylist(
   trackUris: string[]
 ): Promise<SpotifyPlaylist> {
   // 1. 플레이리스트 생성
-  const createResponse = await fetch(
-    `${SPOTIFY_API_BASE}/users/${userId}/playlists`,
+  const playlist = await spotifyApiRequest<SpotifyPlaylist>(`${SPOTIFY_API_BASE}/users/${userId}/playlists`,
     {
       method: "POST",
       headers: {
@@ -200,18 +210,11 @@ export async function createPlaylist(
         description,
         public: true,
       }),
-    }
-  );
-
-  if (!createResponse.ok) {
-    throw new Error("Failed to create playlist");
-  }
-
-  const playlist = await createResponse.json();
+    })
 
   // 2. 트랙 추가
   if (trackUris.length > 0) {
-    await fetch(`${SPOTIFY_API_BASE}/playlists/${playlist.id}/tracks`, {
+    await spotifyApiRequest<void>(`${SPOTIFY_API_BASE}/playlists/${playlist.id}/tracks`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -220,7 +223,8 @@ export async function createPlaylist(
       body: JSON.stringify({
         uris: trackUris,
       }),
-    });
+    })
+    
   }
 
   return playlist;
@@ -233,18 +237,11 @@ export async function getPlaylist(
   accessToken: string,
   playlistId: string
 ): Promise<SpotifyPlaylist> {
-  const response = await fetch(
-    `${SPOTIFY_API_BASE}/playlists/${playlistId}`,
+
+  return spotifyApiRequest<SpotifyPlaylist>(`${SPOTIFY_API_BASE}/playlists/${playlistId}`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch playlist");
-  }
-
-  return response.json();
+    })
 }
