@@ -13,7 +13,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  * 무료 tier에서 빠른 응답 속도 제공
  */
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash-exp",
+  model: "gemini-2.0-flash",
 });
 
 /**

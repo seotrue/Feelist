@@ -33,7 +33,7 @@ Guidelines:
 - **playlist_name**: Creative, memorable name reflecting the mood (in Korean or English)
 - **description**: Short description of when/where to listen (in Korean)
 
-Return ONLY valid JSON, no additional text.`;
+Return ONLY the JSON object, without markdown code blocks or additional text.`;
 }
 
 /**
