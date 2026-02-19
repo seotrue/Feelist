@@ -227,7 +227,7 @@ export async function createPlaylist(
     
   }
 
-  return playlist;
+  return getPlaylist(accessToken,playlist.id);
 }
 
 /**
