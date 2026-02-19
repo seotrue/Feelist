@@ -154,16 +154,16 @@ feelist/
 - [x] `src/lib/spotify.ts`: Spotify API 헬퍼 함수들 (PKCE, 추천, 플레이리스트 생성/조회)
 - [x] `src/lib/prompts.ts`: 자연어 → 음악 특성 변환 프롬프트 + validateAnalysis + PRESET_PROMPTS
 
-### 5단계: 프론트엔드 UI (순수 props 기반)
+### 5단계: 프론트엔드 UI (순수 props 기반) 🚧
 > props만 받아서 그리는 순수 UI 컴포넌트. 데이터 연결은 8단계에서
 
-- [ ] `MoodInput.tsx`: 텍스트 입력 + 예시 프리셋 (PRESET_PROMPTS 활용)
-- [ ] `MoodTags.tsx`: 분석된 무드/특성 태그 시각화
-- [ ] `TrackItem.tsx`: 개별 트랙 (앨범아트, 미리듣기)
-- [ ] `TrackList.tsx`: 추천 트랙 리스트 (Skeleton 로딩)
-- [ ] `PlaylistCard.tsx`: 글래스모피즘 카드
-- [ ] `Header.tsx`: 네비게이션 + Spotify 로그인 상태
-- [ ] `page.tsx`: 메인 페이지 레이아웃 조합
+- [x] `MoodInput.tsx`: 텍스트 입력 + 예시 프리셋 (PRESET_PROMPTS 활용)
+- [x] `MoodTags.tsx`: 분석된 무드/특성 태그 시각화
+- [ ] `TrackItem.tsx`: 개별 트랙 (앨범아트, 미리듣기) - 빈 껍데기
+- [ ] `TrackList.tsx`: 추천 트랙 리스트 (Skeleton 로딩) - 빈 껍데기
+- [ ] `PlaylistCard.tsx`: 글래스모피즘 카드 - 빈 껍데기
+- [x] `Header.tsx`: 네비게이션 + Spotify 로그인 상태
+- [x] `page.tsx`: 메인 페이지 레이아웃 조합
 
 ### 6단계: 비즈니스 컴포넌트 스토리 추가
 - [ ] MoodInput, TrackItem, PlaylistCard 스토리 작성

@@ -6,7 +6,12 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { PRESET_PROMPTS } from "@/lib/prompts";
 
-export function MoodInput() {
+interface MoodInputProps {
+  onAnalyze: (prompt: string) => void;
+  isLoading?: boolean;
+}
+
+export function MoodInput({ onAnalyze, isLoading = false }: MoodInputProps) {
   const [userInput, setUserInput] = useState("");
 
   // 랜덤 프리셋 (suppressHydrationWarning으로 서버/클라이언트 불일치 허용)
@@ -15,7 +20,10 @@ export function MoodInput() {
   );
 
   const handleGenerate = () => {
-    console.log(userInput);
+    const trimmed = userInput.trim();
+    if (trimmed) {
+      onAnalyze(trimmed);
+    }
   };
 
   return (
@@ -46,8 +54,12 @@ export function MoodInput() {
         ))}
       </div>
 
-      <Button variant="gradient" onClick={handleGenerate}>
-        Generate
+      <Button
+        variant="gradient"
+        onClick={handleGenerate}
+        disabled={isLoading || !userInput.trim()}
+      >
+        {isLoading ? "Analyzing..." : "Generate"}
       </Button>
     </div>
   );
