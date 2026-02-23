@@ -170,14 +170,15 @@ feelist/
 - [ ] 인터랙션 시나리오 문서화
 
 ### 7단계: 백엔드 API 구현
-- [ ] `src/app/api/auth/spotify/route.ts`: 토큰 교환 API 라우트
-- [ ] `src/app/callback/page.tsx`: OAuth 리다이렉트 처리
-- [ ] `src/stores/usePlayerStore.ts`: 인증 토큰 상태 관리 (Zustand)
-- [ ] `src/components/SpotifyLoginButton.tsx`: PKCE 플로우
-- [ ] `src/app/api/analyze/route.ts`: 자연어 → Gemini → 음악 특성 JSON
-- [ ] Spotify recommendation seed 형태로 변환
-- [ ] `src/app/api/playlist/route.ts`: Spotify Recommendations API 호출
-- [ ] 사용자 Spotify 계정에 실제 플레이리스트 생성
+> Zustand 스토어는 API 응답 구조 파악 후 구현 (토큰 교환 API → 콜백 → Zustand → 버튼 순서)
+
+- [x] `src/lib/spotify.ts`: PKCE 유틸리티 + Spotify API 헬퍼 전체 구현 완료
+- [x] `src/app/api/analyze/route.ts`: 자연어 → Gemini → 음악 특성 JSON (완료)
+- [ ] `src/app/api/auth/spotify/route.ts`: Authorization Code → Access Token 교환
+- [ ] `src/app/callback/page.tsx`: OAuth 리다이렉트 처리 (code + state 파싱 → API 호출)
+- [ ] `src/stores/usePlayerStore.ts`: 인증 토큰/유저 상태 관리 (Zustand)
+- [ ] `src/components/SpotifyLoginButton.tsx`: PKCE 플로우 시작 (code_verifier → 인증 URL 이동)
+- [ ] `src/app/api/playlist/route.ts`: Spotify Recommendations → 플레이리스트 생성
 
 ### 8단계: React Query 훅으로 UI ↔ 백엔드 연결 + UI 수정
 - [ ] `src/hooks/useAnalyze.ts`: `/api/analyze` 호출 mutation 훅
@@ -193,6 +194,10 @@ feelist/
 ### 10단계: 빌드 & 검증
 - [ ] `pnpm build` 프로덕션 빌드 확인
 - [ ] `pnpm storybook` 스토리 확인
+
+### 11단계: 토큰 갱신
+- [ ] `refreshAccessToken()` 연동 — API 호출 401 시 자동 갱신 후 재시도
+- [ ] 앱 로드 시 `expiresAt` 확인 후 만료된 경우 선제적 갱신
 
 ---
 
