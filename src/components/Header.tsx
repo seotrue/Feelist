@@ -1,21 +1,16 @@
 "use client";
 
 import { Button } from "./ui/button";
+import { useAuthStore } from "@/stores/authStore";
 import type { SpotifyUser } from "@/types";
 
-interface HeaderProps {
-  user?: SpotifyUser | null;
-  onLogin?: () => void;
-  onLogout?: () => void;
-}
-
-// 로그인 상태: 유저 정보 + 로그아웃 버튼
+// 로그인 후 컴포넌트
 function AuthenticatedSection({
   user,
   onLogout,
 }: {
   user: SpotifyUser;
-  onLogout?: () => void;
+  onLogout: () => void;
 }) {
   return (
     <div className="flex items-center gap-3">
@@ -29,8 +24,8 @@ function AuthenticatedSection({
   );
 }
 
-// 비로그인 상태: 로그인 버튼
-function UnauthenticatedSection({ onLogin }: { onLogin?: () => void }) {
+// 로그인 전 컴포넌트
+function UnauthenticatedSection({ onLogin }: { onLogin: () => void }) {
   return (
     <Button variant="gradient" size="sm" onClick={onLogin}>
       Spotify로 로그인
@@ -38,17 +33,17 @@ function UnauthenticatedSection({ onLogin }: { onLogin?: () => void }) {
   );
 }
 
-export function Header({ user, onLogin, onLogout }: HeaderProps) {
+export function Header() {
+  const { user, login, logout } = useAuthStore();
+
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border/50 px-6 glass">
-      {/* 로고 */}
       <h1 className="text-xl font-bold gradient-text">Feelist</h1>
 
-      {/* 인증 상태에 따른 UI 분기 */}
       {user ? (
-        <AuthenticatedSection user={user} onLogout={onLogout} />
+        <AuthenticatedSection user={user} onLogout={logout} />
       ) : (
-        <UnauthenticatedSection onLogin={onLogin} />
+        <UnauthenticatedSection onLogin={login} />
       )}
     </header>
   );

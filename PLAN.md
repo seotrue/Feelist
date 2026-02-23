@@ -195,6 +195,10 @@ feelist/
 - [ ] `pnpm build` 프로덕션 빌드 확인
 - [ ] `pnpm storybook` 스토리 확인
 
+### 11단계: 토큰 갱신
+- [ ] `refreshAccessToken()` 연동 — API 호출 401 시 자동 갱신 후 재시도
+- [ ] 앱 로드 시 `expiresAt` 확인 후 만료된 경우 선제적 갱신
+
 ---
 
 ## 핵심 AI 프롬프트 설계
