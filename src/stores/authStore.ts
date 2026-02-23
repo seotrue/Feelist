@@ -19,7 +19,11 @@ interface AuthStore {
 
   login: () => Promise<void>;
   logout: () => void;
-  setTokens: (accessToken: string, refreshToken: string, expiresIn: number) => void;
+  setTokens: (
+    accessToken: string,
+    refreshToken: string,
+    expiresIn: number,
+  ) => void;
   setUser: (user: SpotifyUser) => void;
 }
 
@@ -48,6 +52,7 @@ export const useAuthStore = create<AuthStore>()(
           expiresAt: null,
           isAuthenticated: false,
         });
+        localStorage.removeItem("feelist-auth"); // 직접 삭제
       },
 
       setTokens: (accessToken, refreshToken, expiresIn) => {
@@ -73,6 +78,6 @@ export const useAuthStore = create<AuthStore>()(
         isAuthenticated: state.isAuthenticated,
         user: state.user,
       }),
-    }
-  )
+    },
+  ),
 );
