@@ -1,33 +1,21 @@
 import { useMutation } from "@tanstack/react-query";
 import { MoodAnalysis, Playlist } from "@/types";
+import { apiRequest, HttpError } from "@/lib/api/httpClient";
 
 /**
- * 커스텀 HTTP 에러 클래스
+ * 플레이리스트 생성 API 응답 타입
  */
-class HttpError extends Error {
-  public readonly status: number;
-  public readonly statusText: string;
-  public readonly responseBodyText?: string;
-
-  constructor(params: {
-    status: number;
-    statusText: string;
-    responseBodyText?: string;
-  }) {
-    super(`HTTP ${params.status} ${params.statusText}`);
-    this.name = "HttpError";
-    this.status = params.status;
-    this.statusText = params.statusText;
-    this.responseBodyText = params.responseBodyText;
-  }
-}
+type PlaylistResponse = {
+  playlist: Playlist;
+  spotifyPlaylistId: string;
+};
 
 /**
  * 타입 가드: CreatePlaylistResponse 검증
  */
 function isCreatePlaylistResponse(
   value: unknown
-): value is { playlist: Playlist; spotifyPlaylistId: string } {
+): value is PlaylistResponse {
   if (typeof value !== "object" || value === null) return false;
   const record = value as Record<string, unknown>;
 
@@ -51,28 +39,16 @@ function isCreatePlaylistResponse(
  */
 async function postCreatePlaylist(params: {
   analysis: MoodAnalysis;
-  accessToken?: string;
   signal?: AbortSignal;
 }): Promise<Playlist> {
-  const { analysis, accessToken, signal } = params;
+  const { analysis, signal } = params;
 
-  const response = await fetch("/api/playlist", {
+  const json = await apiRequest<PlaylistResponse>({
+    url: "/api/playlist",
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ analysis, accessToken }),
+    body: { analysis },
     signal,
   });
-
-  if (!response.ok) {
-    const responseBodyText = await response.text().catch(() => undefined);
-    throw new HttpError({
-      status: response.status,
-      statusText: response.statusText,
-      responseBodyText,
-    });
-  }
-
-  const json: unknown = await response.json();
 
   if (!isCreatePlaylistResponse(json)) {
     throw new Error("Playlist API 응답 형식이 예상과 다릅니다.");
@@ -92,10 +68,10 @@ export function useCreatePlaylist() {
   return useMutation<
     Playlist,
     Error,
-    { analysis: MoodAnalysis; accessToken?: string }
+    { analysis: MoodAnalysis;}
   >({
-    mutationFn: async ({ analysis, accessToken }) => {
-      return postCreatePlaylist({ analysis, accessToken });
+    mutationFn: async ({ analysis }) => {
+      return postCreatePlaylist({ analysis });
     },
     onSuccess: (playlist) => {
       console.log("플레이리스트 생성 성공:", playlist);
@@ -105,6 +81,8 @@ export function useCreatePlaylist() {
         console.error("플레이리스트 생성 실패:", {
           status: error.status,
           statusText: error.statusText,
+          errorCode: error.errorCode,
+          requestId: error.requestId,
           responseBodyText: error.responseBodyText,
         });
         return;

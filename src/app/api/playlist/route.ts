@@ -159,7 +159,11 @@ const MOCK_TRACKS: SpotifyTrack[] = [
  */
 export async function POST(request: NextRequest) {
   try {
-    // 1. JSON 파싱
+    // 1. Authorization 헤더에서 accessToken 추출
+    const authorization = request.headers.get("Authorization");
+    const accessToken = authorization?.replace("Bearer ", "");
+
+    // 2. JSON 파싱
     let body: unknown;
     try {
       body = await request.json();
@@ -170,7 +174,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. 타입 검증
+    // 3. 타입 검증
     if (!isCreatePlaylistRequest(body)) {
       return NextResponse.json<ErrorResponse>(
         { error: "analysis field is required" },
@@ -180,11 +184,11 @@ export async function POST(request: NextRequest) {
 
     const { analysis } = body;
 
-    // 3. 목 데이터 응답 (실제 Spotify API 호출 전까지 임시)
+    // 4. 목 데이터 응답 (실제 Spotify API 호출 전까지 임시)
     console.log("[Mock] Received analysis:", analysis);
+    console.log("[Mock] Access token:", accessToken ? "present" : "missing");
 
     // TODO: 실제 구현
-    // const accessToken = body.accessToken;
     // const recommendations = await getSpotifyRecommendations(analysis, accessToken);
     // const playlistId = await createSpotifyPlaylist(analysis, recommendations, accessToken);
 

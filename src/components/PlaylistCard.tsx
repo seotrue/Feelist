@@ -1,192 +1,83 @@
-"use client";
-
+import Image from "next/image";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
-import { Skeleton } from "./ui/skeleton";
-import { Music, ListMusic, Clock, ExternalLink, Share2 } from "lucide-react";
+import { Music, ExternalLink } from "lucide-react";
+import { Playlist } from "@/types";
 
-// 타입 정의
 interface PlaylistCardProps {
-  playlist?: {
-    name: string;
-    description: string;
-    trackCount: number;
-    spotifyUrl?: string;
-    totalDuration?: number; // ms
-    coverImage?: string;
-  };
-  isLoading?: boolean;
-  onShare?: () => void;
-}
-
-type Playlist = NonNullable<PlaylistCardProps["playlist"]>;
-
-// Discriminated Union으로 타입 안전성 확보
-type ViewState =
-  | { status: "loading" }
-  | { status: "empty" }
-  | { status: "ready"; playlist: Playlist };
-
-// 메시지 상수
-const MESSAGES = {
-  EMPTY: "플레이리스트가 생성되면 여기 표시됩니다",
-} as const;
-
-// 헬퍼 함수: ms를 "1시간 23분" 형식으로 변환
-function formatDuration(ms: number): string {
-  if (!Number.isFinite(ms) || ms < 0) return "0분";
-
-  const totalMinutes = Math.floor(ms / 60000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  if (hours > 0) {
-    return `${hours}시간 ${minutes}분`;
-  }
-  return `${minutes}분`;
-}
-
-// 헬퍼 함수: 뷰 상태 결정
-function getViewState(input: {
-  isLoading?: boolean;
-  playlist?: PlaylistCardProps["playlist"];
-}): ViewState {
-  if (input.isLoading === true) {
-    return { status: "loading" };
-  }
-
-  if (!input.playlist) {
-    return { status: "empty" };
-  }
-
-  return { status: "ready", playlist: input.playlist };
-}
-
-// Skeleton 컴포넌트
-function PlaylistCardSkeleton() {
-  return (
-    <Card variant="glass" className="w-full max-w-2xl">
-      <CardContent className="p-6 space-y-4">
-        {/* 헤더 */}
-        <div className="flex items-start gap-3">
-          <Skeleton className="size-6 rounded shrink-0" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
-          </div>
-        </div>
-
-        {/* 메타 정보 */}
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-4 w-20" />
-        </div>
-
-        {/* 버튼 */}
-        <Skeleton className="h-10 w-full" />
-      </CardContent>
-    </Card>
-  );
-}
-
-function LoadingState() {
-  return <PlaylistCardSkeleton />;
-}
-
-function EmptyState() {
-  return (
-    <Card variant="glass" className="w-full max-w-2xl">
-      <CardContent className="flex items-center justify-center h-40">
-        <p className="text-muted-foreground">{MESSAGES.EMPTY}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ReadyState({
-  playlist,
-  onShare,
-}: {
   playlist: Playlist;
-  onShare?: () => void;
-}) {
-  const handleOpenSpotify = () => {
-    if (playlist.spotifyUrl) {
-      window.open(playlist.spotifyUrl, "_blank", "noopener,noreferrer");
-    }
-  };
+}
+
+export function PlaylistCard({ playlist }: PlaylistCardProps) {
+  // 앨범아트 이미지 최대 4개 추출
+  const albumImages = playlist.tracks
+    .slice(0, 4)
+    .map((track) => track.album.images[0]?.url)
+    .filter(Boolean);
+
+  // 생성 날짜 포맷
+  const formattedDate = new Date(playlist.createdAt).toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
-    <Card variant="glass" className="w-full max-w-2xl">
+    <Card variant="glass" className="max-w-md mx-auto overflow-hidden">
       <CardContent className="p-6 space-y-4">
-        {/* 헤더: 아이콘 + 제목 + 설명 */}
-        <div className="flex items-start gap-3">
-          <Music className="size-6 text-primary shrink-0 mt-1" />
-          <div className="flex-1 min-w-0">
-            <h3 className="text-2xl font-bold gradient-text truncate">
-              {playlist.name}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-              {playlist.description}
-            </p>
-          </div>
+        {/* 앨범아트 그리드 */}
+        <div className="grid grid-cols-2 gap-2 w-full aspect-square rounded-lg overflow-hidden bg-muted">
+          {albumImages.length > 0 ? (
+            albumImages.map((url, i) => (
+              <div key={i} className="relative w-full h-full">
+                <Image
+                  src={url}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                />
+              </div>
+            ))
+          ) : (
+            <div className="col-span-2 flex items-center justify-center">
+              <Music className="h-12 w-12 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+
+        {/* 텍스트 정보 */}
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold gradient-text">
+            {playlist.name}
+          </h2>
+          <p className="text-muted-foreground line-clamp-3">
+            {playlist.description}
+          </p>
         </div>
 
         {/* 메타 정보 */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <ListMusic className="size-4" />
-            {playlist.trackCount}곡
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Music className="h-4 w-4" />
+          <span>
+            {playlist.tracks.length} tracks • {formattedDate}
           </span>
-          {playlist.totalDuration !== undefined && (
-            <span className="flex items-center gap-1.5">
-              <Clock className="size-4" />
-              {formatDuration(playlist.totalDuration)}
-            </span>
-          )}
         </div>
 
-        {/* 액션 버튼 */}
-        <div className="flex gap-2">
-          {playlist.spotifyUrl && (
-            <Button
-              variant="gradient"
-              className="flex-1"
-              onClick={handleOpenSpotify}
+        {/* Spotify 버튼 */}
+        {playlist.spotifyUrl && (
+          <Button variant="gradient" className="w-full" asChild>
+            <a
+              href={playlist.spotifyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <ExternalLink className="size-4 mr-2" />
+              <ExternalLink className="h-4 w-4 mr-2" />
               Spotify에서 열기
-            </Button>
-          )}
-          {onShare && (
-            <Button variant="outline" size="icon" onClick={onShare}>
-              <Share2 className="size-4" />
-            </Button>
-          )}
-        </div>
+            </a>
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
-}
-
-export function PlaylistCard({
-  playlist,
-  isLoading,
-  onShare,
-}: PlaylistCardProps) {
-  const viewState = getViewState({ playlist, isLoading });
-
-  function renderContent() {
-    switch (viewState.status) {
-      case "loading":
-        return <LoadingState />;
-      case "empty":
-        return <EmptyState />;
-      case "ready":
-        return <ReadyState playlist={viewState.playlist} onShare={onShare} />;
-    }
-  }
-
-  return renderContent();
 }
