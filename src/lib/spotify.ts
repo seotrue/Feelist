@@ -13,25 +13,24 @@ const SPOTIFY_ACCOUNTS_BASE = "https://accounts.spotify.com";
 // OAuth PKCE Flow Helpers
 // ============================================================================
 
-
 /**
  * Spotify API 호출 래퍼 (에러 처리 통합)
  */
 async function spotifyApiRequest<T>(
- url:string,
- options:RequestInit ={
- }
+  url: string,
+  options: RequestInit = {},
 ): Promise<T> {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const endpoint = url.replace(SPOTIFY_API_BASE, "");
-        throw new Error(`Spotify API Error (${options.method || 'GET'} ${endpoint}): ${response.status} ${response.statusText}. ${JSON.stringify(errorData)}`)
-    }
+  const response = await fetch(url, options);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const endpoint = url.replace(SPOTIFY_API_BASE, "");
+    throw new Error(
+      `Spotify API Error (${options.method || "GET"} ${endpoint}): ${response.status} ${response.statusText}. ${JSON.stringify(errorData)}`,
+    );
+  }
 
-    return response.json();
+  return response.json();
 }
-
 
 /**
  * PKCE Code Verifier 생성 (43-128자의 랜덤 문자열)
@@ -40,16 +39,14 @@ export function generateCodeVerifier(): string {
   const array = new Uint8Array(64);
   crypto.getRandomValues(array);
   return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
-    ""
+    "",
   );
 }
 
 /**
  * Code Verifier를 SHA-256으로 해싱하여 Code Challenge 생성
  */
-export async function generateCodeChallenge(
-  verifier: string
-): Promise<string> {
+export async function generateCodeChallenge(verifier: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(verifier);
   const hash = await crypto.subtle.digest("SHA-256", data);
@@ -65,7 +62,7 @@ export async function generateCodeChallenge(
 export function getAuthorizationUrl(
   clientId: string,
   redirectUri: string,
-  codeChallenge: string
+  codeChallenge: string,
 ): string {
   const params = new URLSearchParams({
     client_id: clientId,
@@ -79,6 +76,7 @@ export function getAuthorizationUrl(
       "playlist-modify-public",
       "playlist-modify-private",
     ].join(" "),
+    show_dialog: "true",
   });
 
   return `${SPOTIFY_ACCOUNTS_BASE}/authorize?${params.toString()}`;
@@ -91,7 +89,7 @@ export async function exchangeCodeForTokens(
   code: string,
   codeVerifier: string,
   clientId: string,
-  redirectUri: string
+  redirectUri: string,
 ): Promise<SpotifyAuthTokens> {
   const response = await fetch(`${SPOTIFY_ACCOUNTS_BASE}/api/token`, {
     method: "POST",
@@ -119,7 +117,7 @@ export async function exchangeCodeForTokens(
  */
 export async function refreshAccessToken(
   refreshToken: string,
-  clientId: string
+  clientId: string,
 ): Promise<SpotifyAuthTokens> {
   const response = await fetch(`${SPOTIFY_ACCOUNTS_BASE}/api/token`, {
     method: "POST",
@@ -148,16 +146,13 @@ export async function refreshAccessToken(
  * 현재 사용자 프로필 가져오기
  */
 export async function getCurrentUser(
-  accessToken: string
+  accessToken: string,
 ): Promise<SpotifyUser> {
-  return spotifyApiRequest<SpotifyUser>(
-    `${SPOTIFY_API_BASE}/me`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  );
+  return spotifyApiRequest<SpotifyUser>(`${SPOTIFY_API_BASE}/me`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
 }
 
 /**
@@ -165,7 +160,7 @@ export async function getCurrentUser(
  */
 export async function getRecommendations(
   accessToken: string,
-  analysis: MoodAnalysis
+  analysis: MoodAnalysis,
 ): Promise<SpotifyTrack[]> {
   const params = new URLSearchParams({
     seed_genres: analysis.genres.slice(0, 5).join(","),
@@ -176,13 +171,13 @@ export async function getRecommendations(
     limit: "20",
   });
 
-  const data = await spotifyApiRequest<{tracks:SpotifyTrack[]}>(
+  const data = await spotifyApiRequest<{ tracks: SpotifyTrack[] }>(
     `${SPOTIFY_API_BASE}/recommendations?${params.toString()}`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    }
+    },
   );
   return data.tracks;
 }
@@ -195,10 +190,11 @@ export async function createPlaylist(
   userId: string,
   name: string,
   description: string,
-  trackUris: string[]
+  trackUris: string[],
 ): Promise<SpotifyPlaylist> {
   // 1. 플레이리스트 생성
-  const playlist = await spotifyApiRequest<SpotifyPlaylist>(`${SPOTIFY_API_BASE}/users/${userId}/playlists`,
+  const playlist = await spotifyApiRequest<SpotifyPlaylist>(
+    `${SPOTIFY_API_BASE}/users/${userId}/playlists`,
     {
       method: "POST",
       headers: {
@@ -210,24 +206,27 @@ export async function createPlaylist(
         description,
         public: true,
       }),
-    })
+    },
+  );
 
   // 2. 트랙 추가
   if (trackUris.length > 0) {
-    await spotifyApiRequest<void>(`${SPOTIFY_API_BASE}/playlists/${playlist.id}/tracks`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+    await spotifyApiRequest<void>(
+      `${SPOTIFY_API_BASE}/playlists/${playlist.id}/tracks`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          uris: trackUris,
+        }),
       },
-      body: JSON.stringify({
-        uris: trackUris,
-      }),
-    })
-    
+    );
   }
 
-  return getPlaylist(accessToken,playlist.id);
+  return getPlaylist(accessToken, playlist.id);
 }
 
 /**
@@ -235,13 +234,14 @@ export async function createPlaylist(
  */
 export async function getPlaylist(
   accessToken: string,
-  playlistId: string
+  playlistId: string,
 ): Promise<SpotifyPlaylist> {
-
-  return spotifyApiRequest<SpotifyPlaylist>(`${SPOTIFY_API_BASE}/playlists/${playlistId}`,
+  return spotifyApiRequest<SpotifyPlaylist>(
+    `${SPOTIFY_API_BASE}/playlists/${playlistId}`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    })
+    },
+  );
 }
