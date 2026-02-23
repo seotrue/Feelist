@@ -4,22 +4,14 @@ import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { Music, ListMusic, Clock, ExternalLink, Share2 } from "lucide-react";
+import type { Playlist } from "@/types";
 
 // 타입 정의
 interface PlaylistCardProps {
-  playlist?: {
-    name: string;
-    description: string;
-    trackCount: number;
-    spotifyUrl?: string;
-    totalDuration?: number; // ms
-    coverImage?: string;
-  };
+  playlist?: Playlist;
   isLoading?: boolean;
   onShare?: () => void;
 }
-
-type Playlist = NonNullable<PlaylistCardProps["playlist"]>;
 
 // Discriminated Union으로 타입 안전성 확보
 type ViewState =
@@ -40,25 +32,22 @@ function formatDuration(ms: number): string {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
-  if (hours > 0) {
-    return `${hours}시간 ${minutes}분`;
-  }
+  if (hours > 0) return `${hours}시간 ${minutes}분`;
   return `${minutes}분`;
+}
+
+// 헬퍼 함수: 트랙 총 재생 시간 계산 (ms)
+function getTotalDuration(playlist: Playlist): number {
+  return playlist.tracks.reduce((sum, track) => sum + track.duration_ms, 0);
 }
 
 // 헬퍼 함수: 뷰 상태 결정
 function getViewState(input: {
   isLoading?: boolean;
-  playlist?: PlaylistCardProps["playlist"];
+  playlist?: Playlist;
 }): ViewState {
-  if (input.isLoading === true) {
-    return { status: "loading" };
-  }
-
-  if (!input.playlist) {
-    return { status: "empty" };
-  }
-
+  if (input.isLoading === true) return { status: "loading" };
+  if (!input.playlist) return { status: "empty" };
   return { status: "ready", playlist: input.playlist };
 }
 
@@ -67,7 +56,6 @@ function PlaylistCardSkeleton() {
   return (
     <Card variant="glass" className="w-full max-w-2xl">
       <CardContent className="p-6 space-y-4">
-        {/* 헤더 */}
         <div className="flex items-start gap-3">
           <Skeleton className="size-6 rounded shrink-0" />
           <div className="flex-1 space-y-2">
@@ -76,14 +64,10 @@ function PlaylistCardSkeleton() {
             <Skeleton className="h-4 w-5/6" />
           </div>
         </div>
-
-        {/* 메타 정보 */}
         <div className="flex items-center gap-4">
           <Skeleton className="h-4 w-16" />
           <Skeleton className="h-4 w-20" />
         </div>
-
-        {/* 버튼 */}
         <Skeleton className="h-10 w-full" />
       </CardContent>
     </Card>
@@ -111,6 +95,9 @@ function ReadyState({
   playlist: Playlist;
   onShare?: () => void;
 }) {
+  const trackCount = playlist.tracks.length;
+  const totalDuration = getTotalDuration(playlist);
+
   const handleOpenSpotify = () => {
     if (playlist.spotifyUrl) {
       window.open(playlist.spotifyUrl, "_blank", "noopener,noreferrer");
@@ -137,12 +124,12 @@ function ReadyState({
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <ListMusic className="size-4" />
-            {playlist.trackCount}곡
+            {trackCount}곡
           </span>
-          {playlist.totalDuration !== undefined && (
+          {totalDuration > 0 && (
             <span className="flex items-center gap-1.5">
               <Clock className="size-4" />
-              {formatDuration(playlist.totalDuration)}
+              {formatDuration(totalDuration)}
             </span>
           )}
         </div>

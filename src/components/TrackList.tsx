@@ -1,26 +1,19 @@
 import { TrackItem } from "./TrackItem";
 import { Skeleton } from "./ui/skeleton";
 import { Card, CardContent } from "./ui/card";
+import type { SpotifyTrack } from "@/types";
 
 // 타입 정의
 interface TrackListProps {
-  tracks?: Array<{
-    id: string;
-    name: string;
-    artists: { name: string }[];
-    album: { images: { url: string }[] };
-    preview_url?: string;
-  }>;
+  tracks?: SpotifyTrack[];
   isLoading?: boolean;
 }
-
-type Track = NonNullable<TrackListProps["tracks"]>[number];
 
 // Discriminated Union으로 타입 안전성 확보
 type ViewState =
   | { status: "loading" }
   | { status: "empty" }
-  | { status: "ready"; tracks: Track[] };
+  | { status: "ready"; tracks: SpotifyTrack[] };
 
 // 메시지 상수
 const MESSAGES = {
@@ -30,13 +23,13 @@ const MESSAGES = {
 // 헬퍼 함수: 뷰 상태 결정
 function getViewState(input: {
   isLoading?: boolean;
-  tracks?: TrackListProps["tracks"];
+  tracks?: SpotifyTrack[];
 }): ViewState {
   if (input.isLoading === true) {
     return { status: "loading" };
   }
 
-  if (!input.tracks || input.tracks.length === 0) {
+  if (!Array.isArray(input.tracks) || input.tracks.length === 0) {
     return { status: "empty" };
   }
 
@@ -53,7 +46,7 @@ function TrackItemSkeleton() {
           <Skeleton className="h-5 w-[200px]" />
           <Skeleton className="h-4 w-[150px]" />
         </div>
-        <Skeleton className="h-10 w-[120px]" />
+        <Skeleton className="h-8 w-[100px]" />
       </CardContent>
     </Card>
   );
@@ -77,7 +70,7 @@ function EmptyState() {
   );
 }
 
-function ReadyState({ tracks }: { tracks: Track[] }) {
+function ReadyState({ tracks }: { tracks: SpotifyTrack[] }) {
   return (
     <div className="space-y-3">
       {tracks.map((track) => (
