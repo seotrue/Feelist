@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { KeyboardEvent } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -28,11 +28,13 @@ function getRandomPresets(count: number = 3): string[] {
 
 export function MoodInput({ onAnalyze, isLoading = false }: MoodInputProps) {
   const [userInput, setUserInput] = useState("");
-
-  // 랜덤 프리셋 (suppressHydrationWarning으로 서버/클라이언트 불일치 허용)
-  const [randomPresets] = useState(() => getRandomPresets());
-
+  const [randomPresets, setRandomPresets] = useState<string[]>([]);
   const isSubmittable = !isLoading && userInput.trim().length > 0;
+
+  // 클라이언트에서만 랜덤 프리셋 설정 (하이드레이션 에러 방지)
+  useEffect(() => {
+    setRandomPresets(getRandomPresets());
+  }, []);
 
   const handleGenerate = useCallback(() => {
     const trimmed = userInput.trim();
@@ -72,7 +74,6 @@ export function MoodInput({ onAnalyze, isLoading = false }: MoodInputProps) {
       <div className="flex flex-wrap gap-2">
         {randomPresets.map((preset) => (
           <Badge
-            suppressHydrationWarning
             key={preset}
             variant="secondary"
             className="cursor-pointer hover:opacity-80 transition-opacity"
