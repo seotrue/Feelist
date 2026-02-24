@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "./ui/button";
-import { useAuthStore } from "@/stores/authStore";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import type { SpotifyUser } from "@/types";
 
 // 로그인 후 컴포넌트
@@ -34,7 +34,7 @@ function UnauthenticatedSection({ onLogin }: { onLogin: () => void }) {
 }
 
 export function Header() {
-  const { user, login, logout } = useAuthStore();
+  const { user, login, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border/50 px-6 glass">

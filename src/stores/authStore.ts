@@ -37,6 +37,10 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
 
       login: async () => {
+        // 기존 세션 데이터 완전 정리
+        sessionStorage.removeItem("pkce_verifier");
+        localStorage.removeItem("feelist-auth");
+
         const verifier = generateCodeVerifier();
         const challenge = await generateCodeChallenge(verifier);
         sessionStorage.setItem("pkce_verifier", verifier);
@@ -45,6 +49,11 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: () => {
+        // 먼저 storage 정리 (persist 트리거 방지)
+        localStorage.removeItem("feelist-auth");
+        sessionStorage.removeItem("pkce_verifier");
+
+        // 그 다음 상태 초기화
         set({
           user: null,
           accessToken: null,
@@ -52,7 +61,6 @@ export const useAuthStore = create<AuthStore>()(
           expiresAt: null,
           isAuthenticated: false,
         });
-        localStorage.removeItem("feelist-auth"); // 직접 삭제
       },
 
       setTokens: (accessToken, refreshToken, expiresIn) => {

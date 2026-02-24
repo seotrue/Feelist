@@ -1,4 +1,5 @@
 import { HttpError, isApiErrorBody } from "./HttpError";
+import { useAuthStore } from "@/stores/authStore";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -17,12 +18,16 @@ export async function apiRequest<T>({
 }: ApiRequestConfig): Promise<T> {
   let response: Response;
 
+  // authStore에서 자동으로 accessToken 가져오기
+  const accessToken = useAuthStore.getState().accessToken ?? undefined;
+
   try {
     response = await fetch(url, {
       method,
       signal,
       headers: {
         "Content-Type": "application/json",
+        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
