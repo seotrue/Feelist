@@ -1,179 +1,216 @@
 "use client";
 
-import { Card, CardContent } from "./ui/card";
+import { useMemo } from "react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "./ui/card";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
-import { Music, ListMusic, Clock, ExternalLink, Share2 } from "lucide-react";
+import { Music, Clock, Play, Share2 } from "lucide-react";
 import type { Playlist } from "@/types";
 
-// 타입 정의
 interface PlaylistCardProps {
   playlist?: Playlist;
   isLoading?: boolean;
   onShare?: () => void;
 }
 
-// Discriminated Union으로 타입 안전성 확보
+const UI_TEXT = {
+  empty: "플레이리스트가 생성되면 여기 표시됩니다",
+  loadingAriaLabel: "플레이리스트 로딩 중",
+  openInSpotify: "Spotify에서 재생",
+  shareAriaLabel: "플레이리스트 공유",
+  loadingSrText: "플레이리스트를 생성하고 있습니다...",
+  aiCuration: "AI 큐레이션",
+  trackCount: (count: number) => `${count}트랙`,
+  moreTracksText: (count: number) => `+ ${count}개 트랙 더 보기`,
+} as const;
+
 type ViewState =
   | { status: "loading" }
   | { status: "empty" }
   | { status: "ready"; playlist: Playlist };
 
-// 메시지 상수
-const MESSAGES = {
-  EMPTY: "플레이리스트가 생성되면 여기 표시됩니다",
-} as const;
-
-// 헬퍼 함수: ms를 "1시간 23분" 형식으로 변환
-function formatDuration(ms: number): string {
-  if (!Number.isFinite(ms) || ms < 0) return "0분";
-
-  const totalMinutes = Math.floor(ms / 60000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  if (hours > 0) return `${hours}시간 ${minutes}분`;
-  return `${minutes}분`;
-}
-
-// 헬퍼 함수: 트랙 총 재생 시간 계산 (ms)
-function getTotalDuration(playlist: Playlist): number {
-  return playlist.tracks.reduce((sum, track) => sum + track.duration_ms, 0);
-}
-
-// 헬퍼 함수: 뷰 상태 결정
-function getViewState(input: {
+function resolveViewState(params: {
   isLoading?: boolean;
   playlist?: Playlist;
 }): ViewState {
-  if (input.isLoading === true) return { status: "loading" };
-  if (!input.playlist) return { status: "empty" };
-  return { status: "ready", playlist: input.playlist };
+  if (params.isLoading === true) return { status: "loading" };
+  if (!params.playlist) return { status: "empty" };
+  return { status: "ready", playlist: params.playlist };
 }
 
-// Skeleton 컴포넌트
+function formatTrackDuration(milliseconds: number): string {
+  if (!Number.isFinite(milliseconds) || milliseconds <= 0) return "0:00";
+
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function formatTotalDuration(milliseconds: number): string {
+  if (!Number.isFinite(milliseconds) || milliseconds <= 0) return "0분";
+
+  const totalMinutes = Math.floor(milliseconds / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours <= 0) return `${minutes}분`;
+  if (minutes <= 0) return `${hours}시간`;
+  return `${hours}시간 ${minutes}분`;
+}
+
+function calculateTotalDurationMilliseconds(playlist: Playlist): number {
+  return playlist.tracks.reduce((sum, track) => sum + track.duration_ms, 0);
+}
+
 function PlaylistCardSkeleton() {
   return (
-    <Card variant="glass" className="w-full max-w-2xl">
-      <CardContent className="p-6 space-y-4">
-        <div className="flex items-start gap-3">
-          <Skeleton className="size-6 rounded shrink-0" />
+    <Card
+      className="w-full max-w-md"
+      role="status"
+      aria-busy="true"
+      aria-label={UI_TEXT.loadingAriaLabel}
+    >
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-14 w-14 rounded-lg shrink-0" aria-hidden="true" />
           <div className="flex-1 space-y-2">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-5 w-32" aria-hidden="true" />
+            <Skeleton className="h-4 w-24" aria-hidden="true" />
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-4 w-20" />
-        </div>
-        <Skeleton className="h-10 w-full" />
+      </CardHeader>
+
+      <CardContent className="flex flex-col gap-2">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex items-center justify-between px-2 py-1.5">
+            <div className="flex flex-col gap-1.5 flex-1">
+              <Skeleton className="h-4 w-32" aria-hidden="true" />
+              <Skeleton className="h-3 w-20" aria-hidden="true" />
+            </div>
+            <Skeleton className="h-3 w-10 shrink-0" aria-hidden="true" />
+          </div>
+        ))}
+        <Skeleton className="h-3 w-28 mt-1" aria-hidden="true" />
       </CardContent>
+
+      <CardFooter className="gap-2">
+        <Skeleton className="h-9 flex-1 rounded-md" aria-hidden="true" />
+        <Skeleton className="h-9 w-9 rounded-md" aria-hidden="true" />
+      </CardFooter>
+
+      <span className="sr-only">{UI_TEXT.loadingSrText}</span>
     </Card>
   );
 }
 
-function LoadingState() {
-  return <PlaylistCardSkeleton />;
-}
-
-function EmptyState() {
+function PlaylistCardEmpty() {
   return (
-    <Card variant="glass" className="w-full max-w-2xl">
+    <Card className="w-full max-w-md">
       <CardContent className="flex items-center justify-center h-40">
-        <p className="text-muted-foreground">{MESSAGES.EMPTY}</p>
+        <p className="text-sm text-muted-foreground">{UI_TEXT.empty}</p>
       </CardContent>
     </Card>
   );
 }
 
-function ReadyState({
-  playlist,
-  onShare,
-}: {
-  playlist: Playlist;
-  onShare?: () => void;
-}) {
+function PlaylistCardReady(props: { playlist: Playlist; onShare?: () => void }) {
+  const { playlist, onShare } = props;
+
   const trackCount = playlist.tracks.length;
-  const totalDuration = getTotalDuration(playlist);
+  const previewTracks = useMemo(() => playlist.tracks.slice(0, 3), [playlist.tracks]);
+  const remainingTracksCount = Math.max(0, trackCount - 3);
+
+  const spotifyUrl = typeof playlist.spotifyUrl === "string" ? playlist.spotifyUrl : "";
+  const canOpenSpotify = spotifyUrl.length > 0;
+  const canShare = typeof onShare === "function";
 
   const handleOpenSpotify = () => {
-    if (playlist.spotifyUrl) {
-      window.open(playlist.spotifyUrl, "_blank", "noopener,noreferrer");
-    }
+    if (!canOpenSpotify) return;
+    window.open(spotifyUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
-    <Card variant="glass" className="w-full max-w-2xl">
-      <CardContent className="p-6 space-y-4">
-        {/* 헤더: 아이콘 + 제목 + 설명 */}
-        <div className="flex items-start gap-3">
-          <Music className="size-6 text-primary shrink-0 mt-1" />
-          <div className="flex-1 min-w-0">
-            <h3 className="text-2xl font-bold gradient-text truncate">
-              {playlist.name}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-              {playlist.description}
-            </p>
+    <Card className="w-full max-w-md">
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-muted shrink-0">
+            <Music className="h-6 w-6 text-primary" aria-hidden="true" />
+          </div>
+          <div className="flex flex-col gap-1 min-w-0">
+            <CardTitle className="text-base truncate">{playlist.name}</CardTitle>
+            <CardDescription>
+              {UI_TEXT.aiCuration} · {UI_TEXT.trackCount(trackCount)}
+            </CardDescription>
           </div>
         </div>
+      </CardHeader>
 
-        {/* 메타 정보 */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <ListMusic className="size-4" />
-            {trackCount}곡
-          </span>
-          {totalDuration > 0 && (
-            <span className="flex items-center gap-1.5">
-              <Clock className="size-4" />
-              {formatDuration(totalDuration)}
-            </span>
-          )}
-        </div>
+      <CardContent className="flex flex-col gap-2">
+        {previewTracks.map((track) => (
+          <div
+            key={track.id}
+            className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-muted transition-colors"
+          >
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-sm font-medium truncate">{track.name}</span>
+              <span className="text-xs text-muted-foreground truncate">
+                {track.artists.map((a) => a.name).join(", ")}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0 ml-2">
+              <Clock className="h-3 w-3" aria-hidden="true" />
+              {formatTrackDuration(track.duration_ms)}
+            </div>
+          </div>
+        ))}
 
-        {/* 액션 버튼 */}
-        <div className="flex gap-2">
-          {playlist.spotifyUrl && (
-            <Button
-              variant="gradient"
-              className="flex-1"
-              onClick={handleOpenSpotify}
-            >
-              <ExternalLink className="size-4 mr-2" />
-              Spotify에서 열기
-            </Button>
-          )}
-          {onShare && (
-            <Button variant="outline" size="icon" onClick={onShare}>
-              <Share2 className="size-4" />
-            </Button>
-          )}
-        </div>
+        {remainingTracksCount > 0 && (
+          <p className="text-xs text-muted-foreground pt-1">
+            {UI_TEXT.moreTracksText(remainingTracksCount)}
+          </p>
+        )}
       </CardContent>
+
+      <CardFooter className="gap-2">
+        {canOpenSpotify && (
+          <Button variant="gradient" size="sm" className="flex-1" onClick={handleOpenSpotify}>
+            <Play className="h-4 w-4" aria-hidden="true" />
+            {UI_TEXT.openInSpotify}
+          </Button>
+        )}
+
+        {canShare && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onShare}
+            aria-label={UI_TEXT.shareAriaLabel}
+            title={UI_TEXT.shareAriaLabel}
+          >
+            <Share2 className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 }
 
-export function PlaylistCard({
-  playlist,
-  isLoading,
-  onShare,
-}: PlaylistCardProps) {
-  const viewState = getViewState({ playlist, isLoading });
+export function PlaylistCard(props: PlaylistCardProps) {
+  const viewState = resolveViewState({
+    playlist: props.playlist,
+    isLoading: props.isLoading,
+  });
 
-  function renderContent() {
-    switch (viewState.status) {
-      case "loading":
-        return <LoadingState />;
-      case "empty":
-        return <EmptyState />;
-      case "ready":
-        return <ReadyState playlist={viewState.playlist} onShare={onShare} />;
-    }
-  }
-
-  return renderContent();
+  if (viewState.status === "loading") return <PlaylistCardSkeleton />;
+  if (viewState.status === "empty") return <PlaylistCardEmpty />;
+  return <PlaylistCardReady playlist={viewState.playlist} onShare={props.onShare} />;
 }
