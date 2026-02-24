@@ -1,6 +1,6 @@
 import { TrackItem } from "./TrackItem";
-import { Skeleton } from "./ui/skeleton";
-import { Card, CardContent } from "./ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 import type { SpotifyTrack } from "@/types";
 
 // 타입 정의

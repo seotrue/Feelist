@@ -1,6 +1,6 @@
 import Image from "next/image";
-import { Card, CardContent } from "./ui/card";
-import { Button } from "./ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import type { SpotifyTrack } from "@/types";
 
 // 헬퍼 함수: 아티스트 이름 문자열 변환

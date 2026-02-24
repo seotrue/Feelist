@@ -1,4 +1,4 @@
-import { Badge } from "./ui/badge";
+import { Badge } from "@/components/ui/badge";
 import type { MoodAnalysis } from "@/types";
 
 // MoodTags가 필요한 필드만 선택 (실제 API 연결 시 MoodAnalysis 전체 객체를 바로 넘길 수 있음)

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { Share2, Check, Copy } from "lucide-react";
 
 // 공유 상태 타입

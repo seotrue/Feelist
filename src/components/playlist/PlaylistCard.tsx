@@ -8,9 +8,9 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from "./ui/card";
-import { Button } from "./ui/button";
-import { Skeleton } from "./ui/skeleton";
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Music, Clock, Play, Share2 } from "lucide-react";
 import type { Playlist } from "@/types";
 

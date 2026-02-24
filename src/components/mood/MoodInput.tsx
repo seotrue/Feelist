@@ -2,9 +2,9 @@
 
 import { useState, useCallback, useEffect } from "react";
 import type { KeyboardEvent } from "react";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { PRESET_PROMPTS } from "@/lib/prompts";
 
 // 타입 정의
