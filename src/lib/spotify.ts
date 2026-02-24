@@ -21,6 +21,7 @@ async function spotifyApiRequest<T>(
   options: RequestInit = {},
 ): Promise<T> {
   const response = await fetch(url, options);
+
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     const endpoint = url.replace(SPOTIFY_API_BASE, "");
@@ -76,7 +77,7 @@ export function getAuthorizationUrl(
       "playlist-modify-public",
       "playlist-modify-private",
     ].join(" "),
-    show_dialog: "true",
+    // show_dialog 제거: 재로그인 시 403 문제 해결
   });
 
   return `${SPOTIFY_ACCOUNTS_BASE}/authorize?${params.toString()}`;

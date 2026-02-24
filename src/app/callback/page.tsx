@@ -11,7 +11,7 @@ const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI ?? "";
 export default function CallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setTokens, setUser } = useAuthStore();
+  const { setTokens, setUser, logout } = useAuthStore();
   const hasStarted = useRef(false);
 
   const handleExchangeCode = async (code: string, verifier: string) => {
@@ -24,13 +24,12 @@ export default function CallbackPage() {
       );
       setTokens(tokens.access_token, tokens.refresh_token, tokens.expires_in);
 
-      console.log("Token scopes:", tokens); // scope 필드 확인
-
       const user = await getCurrentUser(tokens.access_token);
       setUser(user);
       router.replace("/");
     } catch (error) {
-      console.error(error);
+      console.error("Authentication failed:", error);
+      logout();
       router.replace("/");
     }
   };
