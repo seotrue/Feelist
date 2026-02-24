@@ -35,7 +35,7 @@ function isCreatePlaylistResponse(
 }
 
 /**
- * 플레이리스트 생성 API 호출 함수
+ * 플레이리스트 생성 API 호출 함수 도메인 단위
  */
 async function postCreatePlaylist(params: {
   analysis: MoodAnalysis;
