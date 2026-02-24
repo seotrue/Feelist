@@ -3,10 +3,6 @@
 import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
-import { exchangeCodeForTokens, getCurrentUser } from "@/lib/spotify";
-
-const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID ?? "";
-const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI ?? "";
 
 export default function CallbackPage() {
   const router = useRouter();
@@ -16,16 +12,25 @@ export default function CallbackPage() {
 
   const handleExchangeCode = async (code: string, verifier: string) => {
     try {
-      const tokens = await exchangeCodeForTokens(
-        code,
-        verifier,
-        CLIENT_ID,
-        REDIRECT_URI,
-      );
-      setTokens(tokens.access_token, tokens.refresh_token, tokens.expires_in);
+      // API 라우트를 통해 서버에서 토큰 교환 + 유저 정보 조회
+      const response = await fetch("/api/auth/spotify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, codeVerifier: verifier }),
+      });
 
-      const user = await getCurrentUser(tokens.access_token);
-      setUser(user);
+      if (!response.ok) {
+        throw new Error("Failed to exchange authorization code");
+      }
+
+      const data = await response.json();
+
+      // 토큰 저장
+      setTokens(data.access_token, data.refresh_token, data.expires_in);
+
+      // 유저 정보 저장
+      setUser(data.user);
+
       router.replace("/");
     } catch (error) {
       console.error("Authentication failed:", error);

@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { exchangeCodeForTokens } from "@/lib/spotify";
-import type { SpotifyAuthTokens } from "@/types";
+import { exchangeCodeForTokens, getCurrentUser } from "@/lib/spotify";
+import type { SpotifyAuthTokens, SpotifyUser } from "@/types";
+
+/**
+ * 성공 응답 타입 (토큰 + 유저 정보)
+ */
+interface AuthResponse extends SpotifyAuthTokens {
+  user: SpotifyUser;
+}
 
 /**
  * 에러 응답 타입
@@ -22,6 +29,7 @@ interface TokenExchangeRequest {
  * 타입 가드: TokenExchangeRequest 검증
  */
 function isTokenExchangeRequest(value: unknown): value is TokenExchangeRequest {
+
   if (typeof value !== "object" || value === null) return false;
   const record = value as Record<string, unknown>;
   return (
@@ -83,8 +91,11 @@ export async function POST(request: NextRequest) {
       redirectUri
     );
 
-    // 5. 성공 응답
-    return NextResponse.json<SpotifyAuthTokens>(tokens, { status: 200 });
+    // 5. 유저 정보 조회
+    const user = await getCurrentUser(tokens.access_token);
+
+    // 6. 성공 응답 (토큰 + 유저)
+    return NextResponse.json<AuthResponse>({ ...tokens, user }, { status: 200 });
   } catch (error) {
     // 6. 에러 로깅
     console.error("[API /auth/spotify] Error:", {
