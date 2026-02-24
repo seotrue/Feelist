@@ -46,8 +46,6 @@ export default function Home() {
     }
   }, [analysisData]);
 
-  console.log("createPlaylistError", analysisData);
-
   return (
     <>
       <main className="flex flex-1 flex-col items-center gap-8 px-6 py-12">
@@ -68,8 +66,19 @@ export default function Home() {
         {/* 분석 결과 */}
         {analysisData && <MoodTags analysis={analysisData} />}
 
-        <PlaylistCard />
-        <TrackList />
+        {/* 플레이리스트 카드 */}
+        <PlaylistCard
+          playlist={playlistData?.playlist}
+          isLoading={isCreatePlaylistPending}
+        />
+
+        {/* 전체 트랙 리스트 - 플레이리스트 생성 후에만 표시 */}
+        {playlistData && (
+          <TrackList
+            tracks={playlistData.playlist.tracks}
+            title={`${playlistData.playlist.name}의 전체 트랙`}
+          />
+        )}
       </main>
 
       {/* 로그인 필요 다이얼로그 */}

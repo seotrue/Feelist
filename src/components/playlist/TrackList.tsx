@@ -7,6 +7,7 @@ import type { SpotifyTrack } from "@/types";
 interface TrackListProps {
   tracks?: SpotifyTrack[];
   isLoading?: boolean;
+  title?: string;
 }
 
 // Discriminated Union으로 타입 안전성 확보
@@ -17,7 +18,7 @@ type ViewState =
 
 // 메시지 상수
 const MESSAGES = {
-  EMPTY: "추천 트랙이 없습니다.",
+  EMPTY: "트랙이 없습니다.",
 } as const;
 
 // 헬퍼 함수: 뷰 상태 결정
@@ -80,7 +81,7 @@ function ReadyState({ tracks }: { tracks: SpotifyTrack[] }) {
   );
 }
 
-export function TrackList({ tracks, isLoading }: TrackListProps) {
+export function TrackList({ tracks, isLoading, title = "추천 트랙" }: TrackListProps) {
   const viewState = getViewState({ tracks, isLoading });
 
   function renderContent() {
@@ -96,7 +97,7 @@ export function TrackList({ tracks, isLoading }: TrackListProps) {
 
   return (
     <div className="w-full max-w-2xl space-y-4">
-      <h3 className="text-xl font-semibold text-muted-foreground">추천 트랙</h3>
+      <h3 className="text-xl font-semibold text-muted-foreground">{title}</h3>
       {renderContent()}
     </div>
   );
