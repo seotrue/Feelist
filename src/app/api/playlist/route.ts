@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getRecommendations,
   createPlaylist,
   getCurrentUser,
+  searchTracksByMood,
 } from "@/lib/spotify";
-import type { MoodAnalysis } from "@/types";
+import type { MoodAnalysis, SpotifyTrack } from "@/types";
 
 /**
  * 요청 바디 타입
@@ -15,15 +15,19 @@ interface CreatePlaylistRequest {
 
 /**
  * 성공 응답 타입
+ * @note 프론트엔드의 CreatePlaylistResponse (src/types/index.ts)와 일치
  */
 interface CreatePlaylistResponse {
   playlist: {
     id: string;
     name: string;
     description: string;
-    url: string;
-    trackCount: number;
+    tracks: SpotifyTrack[];
+    analysis: MoodAnalysis;
+    createdAt: Date;
+    spotifyUrl?: string;
   };
+  spotifyPlaylistId: string;
 }
 
 /**
@@ -87,6 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     const accessToken = authorization.replace("Bearer ", "");
+    console.log("[DEBUG] Access Token (first 30 chars):", accessToken.substring(0, 30) + "...");
 
     // 2. JSON 파싱
     let body: unknown;
@@ -110,10 +115,19 @@ export async function POST(request: NextRequest) {
     const { analysis } = body;
 
     // 4. 현재 사용자 정보 조회 (userId 필요)
+    console.log("[DEBUG] Calling getCurrentUser...");
     const user = await getCurrentUser(accessToken);
+    console.log("[DEBUG] User fetched successfully:", { id: user.id, display_name: user.display_name });
 
-    // 5. Spotify Recommendations API로 트랙 추천받기
-    const tracks = await getRecommendations(accessToken, analysis);
+    // 5. Spotify API로 트랙 추천받기
+    // 
+    // ⚠️ Recommendations API는 현재 Development Mode에서 차단됨 (2026년 2월 정책)
+    // Extended Quota Mode 승인 후 아래 주석을 해제하여 사용
+    // const tracks = await getRecommendations(accessToken, analysis);
+    //
+    // 현재는 Search API 사용 (키워드 기반 검색)
+    console.log("[DEBUG] Using Search API (Recommendations blocked in Dev Mode)");
+    const tracks = await searchTracksByMood(accessToken, analysis);
 
     if (tracks.length === 0) {
       return NextResponse.json<ErrorResponse>(
@@ -121,6 +135,8 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    console.log("[DEBUG] Found tracks:", tracks.length);
 
     // 6. 트랙 URIs 추출
     const trackUris = tracks.map((track) => track.uri);
@@ -134,15 +150,18 @@ export async function POST(request: NextRequest) {
       trackUris
     );
 
-    // 8. 성공 응답
+    // 8. 성공 응답 (프론트엔드 CreatePlaylistResponse 타입에 맞춰 구성)
     const response: CreatePlaylistResponse = {
       playlist: {
         id: playlist.id,
         name: playlist.name,
         description: playlist.description,
-        url: playlist.external_urls.spotify,
-        trackCount: playlist.tracks.total,
+        tracks: tracks, // 검색된 트랙 목록 포함
+        analysis: analysis, // Gemini 분석 결과
+        createdAt: new Date(), // 생성 시각
+        spotifyUrl: playlist.external_urls.spotify, // Spotify URL
       },
+      spotifyPlaylistId: playlist.id, // 중복이지만 프론트엔드 타입에 필요
     };
 
     return NextResponse.json(response, { status: 201 });

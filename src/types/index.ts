@@ -38,7 +38,15 @@ export interface SpotifyPlaylist {
     height: number;
     width: number;
   }>;
-  tracks: {
+  // 2026년 2월 API 변경: tracks → items
+  items?: {
+    total: number;
+    items: Array<{
+      item: SpotifyTrack;
+    }>;
+  };
+  // 하위 호환성을 위해 tracks도 유지 (deprecated)
+  tracks?: {
     total: number;
     items: Array<{
       track: SpotifyTrack;
@@ -67,6 +75,50 @@ export interface SpotifyAuthTokens {
   expires_in: number;
   token_type: string;
   scope: string;
+}
+
+/**
+ * Spotify Audio Features
+ * 트랙의 음악적 특성 분석 데이터
+ * @see https://developer.spotify.com/documentation/web-api/reference/get-audio-features
+ */
+export interface AudioFeatures {
+  id: string;
+  energy: number;
+  valence: number;
+  tempo: number;
+  danceability: number;
+  acousticness: number;
+  instrumentalness: number;
+  liveness: number;
+  speechiness: number;
+  loudness: number;
+  mode: number;
+  key: number;
+  time_signature: number;
+  duration_ms: number;
+}
+
+/**
+ * Spotify Audio Features
+ * 트랙의 음악적 특성 분석 데이터
+ * @see https://developer.spotify.com/documentation/web-api/reference/get-audio-features
+ */
+export interface AudioFeatures {
+  id: string; // 트랙 ID
+  energy: number; // 0.0 ~ 1.0 (에너지, 격렬함)
+  valence: number; // 0.0 ~ 1.0 (긍정성, 밝기)
+  tempo: number; // BPM (템포)
+  danceability: number; // 0.0 ~ 1.0 (춤추기 적합도)
+  acousticness: number; // 0.0 ~ 1.0 (어쿠스틱 정도)
+  instrumentalness: number; // 0.0 ~ 1.0 (보컬 없는 정도)
+  liveness: number; // 0.0 ~ 1.0 (라이브 녹음 가능성)
+  speechiness: number; // 0.0 ~ 1.0 (말하기/랩 정도)
+  loudness: number; // dB (음량)
+  mode: number; // 0 (minor) or 1 (major)
+  key: number; // 0~11 (음계)
+  time_signature: number; // 박자 (e.g., 4)
+  duration_ms: number; // 길이 (밀리초)
 }
 
 // ============================================================================

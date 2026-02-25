@@ -1,6 +1,26 @@
 import { MoodAnalysis } from "@/types";
 
 /**
+ * Spotify가 지원하는 유효한 장르 목록
+ * @see https://developer.spotify.com/documentation/web-api/reference/get-recommendation-genres
+ */
+const SPOTIFY_VALID_GENRES = [
+  "acoustic", "afrobeat", "alt-rock", "alternative", "ambient", "anime",
+  "bluegrass", "blues", "bossanova", "brazil", "breakbeat", "chill",
+  "classical", "club", "country", "dance", "dancehall", "deep-house",
+  "disco", "drum-and-bass", "dubstep", "edm", "electro", "electronic",
+  "emo", "folk", "french", "funk", "garage", "gospel", "groove", "grunge",
+  "guitar", "happy", "hard-rock", "hardcore", "heavy-metal", "hip-hop",
+  "house", "idm", "indie", "indie-pop", "industrial", "j-pop", "jazz",
+  "k-pop", "latin", "metal", "minimal-techno", "new-age", "opera", "party",
+  "piano", "pop", "post-dubstep", "progressive-house", "psych-rock", "punk",
+  "punk-rock", "r-n-b", "reggae", "reggaeton", "rock", "rockabilly", "sad",
+  "salsa", "samba", "show-tunes", "singer-songwriter", "ska", "sleep",
+  "soul", "soundtracks", "study", "summer", "synth-pop", "techno", "trance",
+  "trip-hop", "work-out", "world-music",
+] as const;
+
+/**
  * Gemini AI에게 전달할 시스템 프롬프트
  * 사용자의 자연어 입력을 음악 특성으로 변환하는 구조화된 JSON을 생성
  */
@@ -24,7 +44,19 @@ Generate a JSON response with the following structure:
 
 Guidelines:
 - **mood**: Overall emotional tone (choose one that best fits)
-- **genres**: 1-3 Spotify genre seeds (e.g., "lo-fi", "jazz", "acoustic", "electronic", "indie", "k-pop", "rock")
+- **genres**: Select 1-3 genres from this EXACT list (use ONLY these genre names):
+  acoustic, afrobeat, alt-rock, alternative, ambient, anime, bluegrass, blues,
+  bossanova, brazil, breakbeat, chill, classical, club, country, dance, dancehall,
+  deep-house, disco, drum-and-bass, dubstep, edm, electro, electronic, emo, folk,
+  french, funk, garage, gospel, groove, grunge, guitar, happy, hard-rock, hardcore,
+  heavy-metal, hip-hop, house, idm, indie, indie-pop, industrial, j-pop, jazz,
+  k-pop, latin, metal, minimal-techno, new-age, opera, party, piano, pop,
+  post-dubstep, progressive-house, psych-rock, punk, punk-rock, r-n-b, reggae,
+  reggaeton, rock, rockabilly, sad, salsa, samba, show-tunes, singer-songwriter,
+  ska, sleep, soul, soundtracks, study, summer, synth-pop, techno, trance,
+  trip-hop, work-out, world-music
+
+  IMPORTANT: Use ONLY genres from above. For "traditional" music → use "folk" or "world-music"
 - **target_energy**: 0.0 (calm/relaxed) to 1.0 (energetic/intense)
 - **target_valence**: 0.0 (sad/melancholic) to 1.0 (happy/cheerful)
 - **target_tempo**: Beats per minute (60=slow, 120=moderate, 180=fast)
@@ -58,10 +90,17 @@ export function validateAnalysis(data: unknown): MoodAnalysis {
 
   const analysis = data as Partial<MoodAnalysis>;
 
+  // 장르 필터링: Spotify가 지원하는 장르만 사용
+  const validGenres = Array.isArray(analysis.genres)
+    ? analysis.genres
+        .filter((genre) => SPOTIFY_VALID_GENRES.includes(genre as any))
+        .slice(0, 5) // Spotify recommendations API는 최대 5개
+    : [];
+
   return {
     mood: analysis.mood ?? DEFAULT_ANALYSIS.mood,
-    genres: Array.isArray(analysis.genres) ? analysis.genres : DEFAULT_ANALYSIS.genres,
-    target_energy: typeof analysis.target_energy === "number" 
+    genres: validGenres.length > 0 ? validGenres : DEFAULT_ANALYSIS.genres,
+    target_energy: typeof analysis.target_energy === "number"
       ? Math.max(0, Math.min(1, analysis.target_energy))
       : DEFAULT_ANALYSIS.target_energy,
     target_valence: typeof analysis.target_valence === "number"
