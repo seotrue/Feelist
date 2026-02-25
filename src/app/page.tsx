@@ -4,7 +4,8 @@ import { MoodInput } from "@/components/mood/MoodInput";
 import { MoodTags } from "@/components/mood/MoodTags";
 import { TrackList } from "@/components/playlist/TrackList";
 import { PlaylistCard } from "@/components/playlist/PlaylistCard";
-import { useAnalyzeMood } from "@/hooks/useAnalyzeMood";
+import { ShareButton } from "@/components/playlist/ShareButton";
+import { useAnalyzeMood, RateLimitError } from "@/hooks/useAnalyzeMood";
 import { useCreatePlaylist } from "@/hooks/usePlaylist";
 import { useIsLogin, useAuth } from "@/hooks/useAuth";
 import {
@@ -22,10 +23,11 @@ export default function Home() {
   const { login } = useAuth();
   const [showLoginDialog, setShowLoginDialog] = useState(false);
 
-  const { mutate, data: analysisData, isPending, isError, error } = useAnalyzeMood();
-  const { mutate: createPlaylist, isPending: isCreatePlaylistPending, isError: isCreatePlaylistError, error: createPlaylistError, playlistData } = useCreatePlaylist();
+  const { mutate, data: analysisData, isPending, isError, error, reset } = useAnalyzeMood();
+  const { mutate: createPlaylist, isPending: isCreatePlaylistPending, playlistData } = useCreatePlaylist();
 
-  // 분석 요청 핸들러 (로그인 체크)
+  const showQuotaDialog = isError && error instanceof RateLimitError;
+
   const handleAnalyze = (prompt: string) => {
     if (!isLogin) {
       setShowLoginDialog(true);
@@ -34,17 +36,20 @@ export default function Home() {
     mutate(prompt);
   };
 
-  // 로그인 다이얼로그에서 로그인 버튼 클릭
   const handleLoginClick = () => {
     setShowLoginDialog(false);
     login();
+  };
+
+  const handleQuotaDialogClose = () => {
+    reset();
   };
 
   useEffect(() => {
     if (analysisData) {
       createPlaylist(analysisData);
     }
-  }, [analysisData]);
+  }, [analysisData, createPlaylist]);
 
   return (
     <>
@@ -56,8 +61,8 @@ export default function Home() {
           <p className="text-muted-foreground">AI가 분석 중입니다...</p>
         )}
 
-        {/* 에러 */}
-        {isError && (
+        {/* 에러 (Rate Limit 제외) */}
+        {isError && !(error instanceof RateLimitError) && (
           <p className="text-destructive">
             분석 실패: {error?.message || "알 수 없는 오류"}
           </p>
@@ -71,6 +76,11 @@ export default function Home() {
           playlist={playlistData?.playlist}
           isLoading={isCreatePlaylistPending}
         />
+
+        {/* 공유 버튼 - 플레이리스트 생성 후에만 표시 */}
+        {playlistData?.spotifyPlaylistId && (
+          <ShareButton playlistId={playlistData.spotifyPlaylistId} />
+        )}
 
         {/* 전체 트랙 리스트 - 플레이리스트 생성 후에만 표시 */}
         {playlistData && (
@@ -99,6 +109,23 @@ export default function Home() {
             </Button>
             <Button variant="gradient" onClick={handleLoginClick}>
               Spotify로 로그인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 할당량 초과 다이얼로그 */}
+      <Dialog open={showQuotaDialog} onOpenChange={handleQuotaDialogClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>오늘 분석 횟수를 모두 사용했어요</DialogTitle>
+            <DialogDescription>
+              Gemini AI의 무료 할당량을 모두 사용했습니다. 내일 다시 시도해주세요.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={handleQuotaDialogClose}>
+              확인
             </Button>
           </DialogFooter>
         </DialogContent>
