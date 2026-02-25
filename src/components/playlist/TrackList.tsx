@@ -1,0 +1,104 @@
+import { TrackItem } from "./TrackItem";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+import type { SpotifyTrack } from "@/types";
+
+// 타입 정의
+interface TrackListProps {
+  tracks?: SpotifyTrack[];
+  isLoading?: boolean;
+  title?: string;
+}
+
+// Discriminated Union으로 타입 안전성 확보
+type ViewState =
+  | { status: "loading" }
+  | { status: "empty" }
+  | { status: "ready"; tracks: SpotifyTrack[] };
+
+// 메시지 상수
+const MESSAGES = {
+  EMPTY: "트랙이 없습니다.",
+} as const;
+
+// 헬퍼 함수: 뷰 상태 결정
+function getViewState(input: {
+  isLoading?: boolean;
+  tracks?: SpotifyTrack[];
+}): ViewState {
+  if (input.isLoading === true) {
+    return { status: "loading" };
+  }
+
+  if (!Array.isArray(input.tracks) || input.tracks.length === 0) {
+    return { status: "empty" };
+  }
+
+  return { status: "ready", tracks: input.tracks };
+}
+
+// Skeleton 컴포넌트
+function TrackItemSkeleton() {
+  return (
+    <Card variant="glass">
+      <CardContent className="flex items-center gap-4 p-4">
+        <Skeleton className="size-16 rounded-md shrink-0" />
+        <div className="flex-1 flex flex-col gap-2">
+          <Skeleton className="h-5 w-[200px]" />
+          <Skeleton className="h-4 w-[150px]" />
+        </div>
+        <Skeleton className="h-8 w-[100px]" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <TrackItemSkeleton key={index} />
+      ))}
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="flex items-center justify-center h-24">
+      <p className="text-muted-foreground">{MESSAGES.EMPTY}</p>
+    </div>
+  );
+}
+
+function ReadyState({ tracks }: { tracks: SpotifyTrack[] }) {
+  return (
+    <div className="space-y-3">
+      {tracks.map((track) => (
+        <TrackItem key={track.id} track={track} />
+      ))}
+    </div>
+  );
+}
+
+export function TrackList({ tracks, isLoading, title = "추천 트랙" }: TrackListProps) {
+  const viewState = getViewState({ tracks, isLoading });
+
+  function renderContent() {
+    switch (viewState.status) {
+      case "loading":
+        return <LoadingState />;
+      case "empty":
+        return <EmptyState />;
+      case "ready":
+        return <ReadyState tracks={viewState.tracks} />;
+    }
+  }
+
+  return (
+    <div className="w-full max-w-2xl space-y-4">
+      <h3 className="text-xl font-semibold text-muted-foreground">{title}</h3>
+      {renderContent()}
+    </div>
+  );
+}

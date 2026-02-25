@@ -16,7 +16,7 @@
 | 디자인 시스템 | shadcn/ui 기반 커스텀 + Storybook |
 | 디자인 무드 | 다크 모던 (Spotify 스타일 다크 배경 + 네온/그라데이션 포인트) |
 | 상태관리 | Zustand (전역) + TanStack Query (서버 상태) |
-| AI | OpenAI API (GPT-4o-mini) - 자연어 → 음악 특성 매핑 |
+| AI | Google Gemini API (gemini-2.0-flash, 무료 tier) - 자연어 → 음악 특성 매핑 |
 | 음악 | Spotify Web API (OAuth 2.0 PKCE) |
 | 패키지 매니저 | pnpm |
 | 배포 | Vercel |
@@ -37,7 +37,7 @@ feelist/
 │   │   │   │   └── spotify/
 │   │   │   │       └── route.ts    # Spotify OAuth 콜백 처리
 │   │   │   ├── analyze/
-│   │   │   │   └── route.ts        # OpenAI 자연어 분석 API
+│   │   │   │   └── route.ts        # Gemini 자연어 분석 API
 │   │   │   └── playlist/
 │   │   │       └── route.ts        # Spotify 플레이리스트 생성 API
 │   │   ├── callback/
@@ -64,7 +64,7 @@ feelist/
 │   │   ├── ShareButton.tsx         # 공유 버튼
 │   │   └── Header.tsx              # 헤더 (로고 + 로그인 상태)
 │   ├── lib/
-│   │   ├── openai.ts               # OpenAI API 클라이언트
+│   │   ├── gemini.ts               # Google Gemini API 클라이언트
 │   │   ├── spotify.ts              # Spotify API 유틸리티
 │   │   ├── prompts.ts              # AI 프롬프트 템플릿
 │   │   └── utils.ts                # shadcn/ui cn() 유틸리티
@@ -134,7 +134,7 @@ feelist/
 - [x] `pnpm create next-app` (App Router, TypeScript, Tailwind, ESLint)
 - [x] shadcn/ui 초기화 + 컴포넌트 추가
 - [x] Storybook 설치
-- [x] 추가 의존성: `zustand`, `@tanstack/react-query`, `openai`, `sonner`
+- [x] 추가 의존성: `zustand`, `@tanstack/react-query`, `@google/generative-ai`, `sonner`
 - [x] `.env.example` 생성
 
 ### 2단계: 디자인 시스템 구축 ✅
@@ -143,63 +143,67 @@ feelist/
 - [x] Storybook 다크 테마 프리뷰 설정
 - [x] `pnpm build` 성공 확인
 
-### 3단계: 디자인 시스템 스토리 작성
-- [ ] 각 ui 컴포넌트별 `.stories.tsx` 작성
-- [ ] Variants, sizes, states 문서화
-- [ ] 다크 배경에서의 렌더링 확인
+### 3단계: 디자인 시스템 스토리 작성 ✅
+- [x] 각 ui 컴포넌트별 `.stories.tsx` 작성
+- [x] Variants, sizes, states 문서화
+- [x] 다크 배경에서의 렌더링 확인
 
-### 4단계: 타입 정의 & 공통 모듈
-- [ ] `src/types/index.ts`: MoodAnalysis, SpotifyTrack, Playlist 등 타입
-- [ ] `src/lib/openai.ts`: OpenAI 클라이언트 초기화
-- [ ] `src/lib/spotify.ts`: Spotify API 헬퍼 함수들
-- [ ] `src/lib/prompts.ts`: 자연어 → 음악 특성 변환 프롬프트
+### 4단계: 타입 정의 & 공통 모듈 ✅
+- [x] `src/types/index.ts`: MoodAnalysis, SpotifyTrack, Playlist 등 타입
+- [x] `src/lib/gemini.ts`: Google Gemini 클라이언트 초기화 (gemini-2.0-flash, spotifyApiRequest 공통화)
+- [x] `src/lib/spotify.ts`: Spotify API 헬퍼 함수들 (PKCE, 추천, 플레이리스트 생성/조회)
+- [x] `src/lib/prompts.ts`: 자연어 → 음악 특성 변환 프롬프트 + validateAnalysis + PRESET_PROMPTS
 
-### 5단계: Spotify OAuth 인증
-- [ ] `src/app/api/auth/spotify/route.ts`: 토큰 교환 API 라우트
-- [ ] `src/app/callback/page.tsx`: OAuth 리다이렉트 처리
-- [ ] `src/stores/usePlayerStore.ts`: 인증 토큰 상태 관리 (Zustand)
-- [ ] `src/components/SpotifyLoginButton.tsx`: PKCE 플로우
+### 5단계: 프론트엔드 UI (순수 props 기반) 🚧
+> props만 받아서 그리는 순수 UI 컴포넌트. 데이터 연결은 8단계에서
 
-### 6단계: AI 분석 API
-- [ ] `src/app/api/analyze/route.ts`: 자연어 → OpenAI → 음악 특성 JSON
-- [ ] Spotify recommendation seed 형태로 변환
+- [x] `MoodInput.tsx`: 텍스트 입력 + 예시 프리셋 (PRESET_PROMPTS 활용)
+- [x] `MoodTags.tsx`: 분석된 무드/특성 태그 시각화
+- [ ] `TrackItem.tsx`: 개별 트랙 (앨범아트, 미리듣기) - 빈 껍데기
+- [ ] `TrackList.tsx`: 추천 트랙 리스트 (Skeleton 로딩) - 빈 껍데기
+- [ ] `PlaylistCard.tsx`: 글래스모피즘 카드 - 빈 껍데기
+- [x] `Header.tsx`: 네비게이션 + Spotify 로그인 상태
+- [x] `page.tsx`: 메인 페이지 레이아웃 조합
 
-### 7단계: 플레이리스트 생성 API
-- [ ] `src/app/api/playlist/route.ts`: Spotify Recommendations API 호출
-- [ ] 사용자 Spotify 계정에 실제 플레이리스트 생성
+### 6단계: 비즈니스 컴포넌트 스토리 추가
+- [ ] MoodInput, TrackItem, PlaylistCard 스토리 작성
+- [ ] 인터랙션 시나리오 문서화
 
-### 8단계: 프론트엔드 UI (디자인 시스템 활용)
-- [ ] `MoodInput.tsx`: 텍스트 입력 + 예시 프리셋
-- [ ] `MoodTags.tsx`: 분석된 무드/특성 태그 시각화
-- [ ] `TrackItem.tsx`: 개별 트랙 (앨범아트, 미리듣기)
-- [ ] `TrackList.tsx`: 추천 트랙 리스트 (Skeleton 로딩)
-- [ ] `PlaylistCard.tsx`: 글래스모피즘 카드
-- [ ] `Header.tsx`: 네비게이션 + Spotify 로그인 상태
-- [ ] `page.tsx`: 메인 페이지 조합
+### 7단계: 백엔드 API 구현
+> Zustand 스토어는 API 응답 구조 파악 후 구현 (토큰 교환 API → 콜백 → Zustand → 버튼 순서)
 
-### 9단계: React Query 훅 & 상태 통합
-- [ ] `src/hooks/useAnalyze.ts`: 분석 API mutation 훅
-- [ ] `src/hooks/usePlaylist.ts`: 플레이리스트 생성 mutation 훅
-- [ ] TanStack Query Provider + Zustand 연동
+- [x] `src/lib/spotify.ts`: PKCE 유틸리티 + Spotify API 헬퍼 전체 구현 완료
+- [x] `src/app/api/analyze/route.ts`: 자연어 → Gemini → 음악 특성 JSON (완료)
+- [ ] `src/app/api/auth/spotify/route.ts`: Authorization Code → Access Token 교환
+- [ ] `src/app/callback/page.tsx`: OAuth 리다이렉트 처리 (code + state 파싱 → API 호출)
+- [ ] `src/stores/usePlayerStore.ts`: 인증 토큰/유저 상태 관리 (Zustand)
+- [ ] `src/components/SpotifyLoginButton.tsx`: PKCE 플로우 시작 (code_verifier → 인증 URL 이동)
+- [ ] `src/app/api/playlist/route.ts`: Spotify Recommendations → 플레이리스트 생성
 
-### 10단계: 공유 기능
+### 8단계: React Query 훅으로 UI ↔ 백엔드 연결 + UI 수정
+- [ ] `src/hooks/useAnalyze.ts`: `/api/analyze` 호출 mutation 훅
+- [ ] `src/hooks/usePlaylist.ts`: `/api/playlist` 호출 mutation 훅
+- [ ] TanStack Query Provider + Zustand 인증 상태 연동
+- [ ] 실제 API 연결 후 필요한 UI 컴포넌트 수정
+
+### 9단계: 공유 기능
 - [ ] `src/app/playlist/[id]/page.tsx`: 플레이리스트 공유 페이지
 - [ ] `src/components/ShareButton.tsx`: 링크 복사 + SNS 공유
 - [ ] OG 메타 태그 (동적 `generateMetadata`)
 
-### 11단계: 비즈니스 컴포넌트 스토리 추가
-- [ ] MoodInput, TrackItem, PlaylistCard 스토리 작성
-- [ ] 인터랙션 시나리오 문서화
-
-### 12단계: 빌드 & 검증
+### 10단계: 빌드 & 검증
 - [ ] `pnpm build` 프로덕션 빌드 확인
 - [ ] `pnpm storybook` 스토리 확인
+
+### 11단계: 토큰 갱신
+- [ ] `refreshAccessToken()` 연동 — API 호출 401 시 자동 갱신 후 재시도
+- [ ] 앱 로드 시 `expiresAt` 확인 후 만료된 경우 선제적 갱신
 
 ---
 
 ## 핵심 AI 프롬프트 설계
 
-OpenAI에게 보낼 시스템 프롬프트 → 구조화된 JSON 응답:
+Gemini에게 보낼 시스템 프롬프트 → 구조화된 JSON 응답:
 
 ```json
 {
@@ -227,7 +231,7 @@ SPOTIFY_CLIENT_ID=
 SPOTIFY_CLIENT_SECRET=
 NEXT_PUBLIC_SPOTIFY_CLIENT_ID=
 NEXT_PUBLIC_REDIRECT_URI=http://localhost:3000/callback
-OPENAI_API_KEY=
+GEMINI_API_KEY=
 ```
 
 ---
