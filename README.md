@@ -1,5 +1,27 @@
 
 
+## ⚠️ 로그인 안내
+
+현재 Spotify API **Development Mode** 상태로 운영 중입니다.
+
+Spotify 정책상 등록된 테스트 계정만 로그인이 가능하며,
+일반 사용자는 인증이 제한되어 있습니다.
+
+UI는 로그인 없이 확인 가능합니다.
+
+배포 주소:
+https://feelist-pi.vercel.app/
+
+---
+
+## ⚠️ Login Notice
+
+This project is currently running in Spotify **Development Mode**.
+
+Only registered test users can authenticate due to Spotify API limitations.
+Public login is not available yet.
+
+You can still browse the UI without logging in.
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
