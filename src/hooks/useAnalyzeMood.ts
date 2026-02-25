@@ -23,6 +23,16 @@ class HttpError extends Error {
 }
 
 /**
+ * Rate Limit 에러 클래스
+ */
+export class RateLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RateLimitError";
+  }
+}
+
+/**
  * 타입 가드: AnalyzeResponse 검증
  */
 function isAnalyzeResponse(value: unknown): value is { analysis: MoodAnalysis } {
@@ -62,8 +72,21 @@ async function postAnalyzeMood(params: {
   });
 
   if (!response.ok) {
-    // 서버 에러 바디 포함 (디버깅용)
     const responseBodyText = await response.text().catch(() => undefined);
+    
+    if (response.status === 429) {
+      let errorDetails = "오늘 AI 분석 할당량을 모두 사용했습니다.";
+      try {
+        const errorJson = responseBodyText ? JSON.parse(responseBodyText) : null;
+        if (errorJson?.details) {
+          errorDetails = errorJson.details;
+        }
+      } catch {
+        // JSON 파싱 실패 시 기본 메시지 사용
+      }
+      throw new RateLimitError(errorDetails);
+    }
+    
     throw new HttpError({
       status: response.status,
       statusText: response.statusText,

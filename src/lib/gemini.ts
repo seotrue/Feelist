@@ -13,8 +13,43 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  * 무료 tier에서 빠른 응답 속도 제공
  */
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash", // 실제 사용 가능한 모델
+  model: "gemini-2.5-flash",
 });
+
+/**
+ * Rate Limit 에러 감지
+ */
+function isRateLimitError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("429") ||
+    message.includes("quota") ||
+    message.includes("rate limit") ||
+    message.includes("too many requests")
+  );
+}
+
+/**
+ * 재시도 대기 시간 추출 (초 단위)
+ */
+function extractRetryDelay(error: Error): number | undefined {
+  const match = error.message.match(/retry in ([\d.]+)s/i);
+  return match ? Math.ceil(parseFloat(match[1])) : undefined;
+}
+
+/**
+ * Rate Limit 에러 클래스
+ */
+export class RateLimitError extends Error {
+  public readonly retryAfter?: number;
+
+  constructor(message: string, retryAfter?: number) {
+    super(message);
+    this.name = "RateLimitError";
+    this.retryAfter = retryAfter;
+  }
+}
 
 /**
  * 자연어 입력을 음악 특성(MoodAnalysis)으로 변환
@@ -28,7 +63,6 @@ export async function analyzeMood(userInput: string): Promise<MoodAnalysis> {
     const response = result.response;
     const text = response.text();
 
-    // JSON 추출 (코드 블록으로 감싸진 경우 처리)
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error("Failed to extract JSON from Gemini response");
@@ -38,6 +72,15 @@ export async function analyzeMood(userInput: string): Promise<MoodAnalysis> {
     return validateAnalysis(parsed);
   } catch (error) {
     console.error("Gemini API Error:", error);
+
+    if (error instanceof Error && isRateLimitError(error)) {
+      const retryAfter = extractRetryDelay(error);
+      throw new RateLimitError(
+        "Gemini API 할당량 초과",
+        retryAfter
+      );
+    }
+
     throw new Error(
       error instanceof Error ? error.message : "Failed to analyze mood"
     );

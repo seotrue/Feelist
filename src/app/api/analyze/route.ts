@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AnalyzeRequest, AnalyzeResponse } from "@/types";
-import { analyzeMood } from "@/lib/gemini";
+import { analyzeMood, RateLimitError } from "@/lib/gemini";
 
 /**
  * 에러 응답 타입
@@ -84,14 +84,27 @@ export async function POST(request: NextRequest) {
     const response: AnalyzeResponse = { analysis };
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
-    // 6. 에러 로깅 (프로덕션에서는 로깅 서비스로)
     console.error("[API /analyze] Error:", {
       message: error instanceof Error ? error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
       timestamp: new Date().toISOString(),
     });
 
-    // 7. 에러 응답
+    if (error instanceof RateLimitError) {
+      return NextResponse.json<ErrorResponse>(
+        {
+          error: "RATE_LIMIT_EXCEEDED",
+          details: "오늘 AI 분석 할당량을 모두 사용했습니다. 내일 다시 시도해주세요.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(error.retryAfter || 3600),
+          },
+        }
+      );
+    }
+
     return NextResponse.json<ErrorResponse>(
       {
         error: "Failed to analyze mood",
