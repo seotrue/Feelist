@@ -7,7 +7,14 @@
 Spotify 정책상 등록된 테스트 계정만 로그인이 가능하며,
 일반 사용자는 인증이 제한되어 있습니다.
 
-UI는 로그인 없이 확인 가능합니다.
+
+현재 이 프로젝트는 Spotify API **Development Mode** 상태입니다.
+
+Spotify 정책상, 배포 환경에서는 등록된 테스트 사용자만 로그인이 가능하며  
+일반 사용자 인증은 제한되어 있습니다.
+
+전체 기능을 확인하려면 프로젝트를 로컬로 실행한 뒤  
+Spotify API 키를 직접 설정해주세요
 
 배포 주소:
 https://feelist-pi.vercel.app/
@@ -18,11 +25,13 @@ https://feelist-pi.vercel.app/
 
 This project is currently running in Spotify **Development Mode**.
 
-Only registered test users can authenticate due to Spotify API limitations.
-Public login is not available yet.
+Due to Spotify API restrictions, public login is not available.
+Only registered test users can authenticate.
 
-You can still browse the UI without logging in.
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+To try full functionality, please run the project locally and configure your own Spotify API keys.
+
+This is at.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
 
 ## Getting Started
 
