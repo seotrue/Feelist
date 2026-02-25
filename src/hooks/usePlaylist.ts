@@ -1,16 +1,28 @@
 import { apiRequest } from "@/lib/api/httpClient";
 import { CreatePlaylistResponse, MoodAnalysis } from "@/types";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query";
 
+interface SharedPlaylistData {
+  id: string;
+  spotifyUrl: string;
+  embedUrl: string;
+}
 
 const createPlaylist = async (analysis: MoodAnalysis) => {
-  // 공통 api 함수 사용 (accessToken은 httpClient에서 자동으로 처리)
   const response = await apiRequest<CreatePlaylistResponse>({
     url: "/api/playlist",
     method: "POST",
     body: { analysis },
   });
   return response;
+};
+
+const fetchSharedPlaylist = async (playlistId: string): Promise<SharedPlaylistData> => {
+  const response = await apiRequest<{ playlist: SharedPlaylistData }>({
+    url: `/api/playlist/${playlistId}`,
+    method: "GET",
+  });
+  return response.playlist;
 };
 
 export const useCreatePlaylist = () => {
@@ -25,4 +37,13 @@ export const useCreatePlaylist = () => {
   });
 
   return { mutate, isPending, isError, error , playlistData};
+};
+
+export const useSharedPlaylist = (playlistId: string): UseQueryResult<SharedPlaylistData, Error> => {
+  return useQuery({
+    queryKey: ["playlist", playlistId],
+    queryFn: () => fetchSharedPlaylist(playlistId),
+    enabled: !!playlistId,
+    staleTime: 1000 * 60 * 5,
+  });
 };

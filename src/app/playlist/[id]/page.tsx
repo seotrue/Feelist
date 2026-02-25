@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Music, ArrowLeft, ExternalLink } from "lucide-react";
+import { useSharedPlaylist } from "@/hooks/usePlaylist";
 
 interface PlaylistData {
   id: string;
@@ -20,11 +20,11 @@ type ViewState =
 
 function resolveViewState(params: {
   isLoading: boolean;
-  error: string | null;
-  data: PlaylistData | null;
+  error: Error | null;
+  data: PlaylistData | undefined;
 }): ViewState {
   if (params.isLoading) return { status: "loading" };
-  if (params.error) return { status: "error", message: params.error };
+  if (params.error) return { status: "error", message: params.error.message };
   if (params.data) return { status: "success", data: params.data };
   return { status: "loading" };
 }
@@ -127,32 +127,7 @@ export default function PlaylistPage() {
   const params = useParams();
   const playlistId = params.id as string;
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<PlaylistData | null>(null);
-
-  useEffect(() => {
-    const fetchPlaylist = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/playlist/${playlistId}`);
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "플레이리스트를 불러올 수 없습니다");
-        }
-
-        const { playlist } = await response.json();
-        setData(playlist);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "알 수 없는 오류");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPlaylist();
-  }, [playlistId]);
+  const { data, isLoading, error } = useSharedPlaylist(playlistId);
 
   const viewState = resolveViewState({ isLoading, error, data });
 
